@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <PackageId>SqlNative</PackageId>
+    <PackageTags>sql;database;native;orm</PackageTags>
+    <IsPackable>true</IsPackable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 

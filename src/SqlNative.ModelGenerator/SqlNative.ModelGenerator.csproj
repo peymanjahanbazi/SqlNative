@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <PackageId>SqlNative.ModelGenerator</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>sqlnative-gen</ToolCommandName>
+    <IsPackable>true</IsPackable>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>SqlNative.ModelGenerator</RootNamespace>
     <AssemblyName>SqlNative.ModelGenerator</AssemblyName>
