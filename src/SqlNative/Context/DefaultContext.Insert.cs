@@ -1,0 +1,38 @@
+using System;
+
+namespace SqlNative;
+
+public abstract partial class DefaultContext
+{
+    public Query Insert<T1>(Func<T1, InsertModel> func)
+       where T1 : TableStructure, new()
+    {
+        T1 t1 = new()
+        {
+            DisableAlias = true
+        };
+        var model = func(t1);
+        ValidateInsertModel(model);
+        return BuildQuery(q => q
+            .Append($"INSERT INTO {t1}")
+            .Append($"({model.Columns})"))
+            .Append($"VALUES ( {model.Values} )")
+            .SetParameters(model.Parameters);
+    }
+
+    private static void ValidateInsertModel(InsertModel model)
+    {
+        if (model is null)
+        {
+            throw new ArgumentNullException(nameof(model));
+        }
+        if (string.IsNullOrWhiteSpace(model.Columns))
+        {
+            throw new InvalidOperationException("InsertModel.Columns cannot be null or empty.");
+        }
+        if (string.IsNullOrWhiteSpace(model.Values))
+        {
+            throw new InvalidOperationException("InsertModel.Values cannot be null or empty.");
+        }
+    }
+}
