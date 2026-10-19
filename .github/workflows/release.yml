@@ -44,7 +44,14 @@ jobs:
               run: dotnet test -c Release --no-build --logger trx
 
             - name: Pack
-              run: dotnet pack -c Release --no-build -o artifacts -p:ContinuousIntegrationBuild=true
+              run: |
+                  VERSION=${GITHUB_REF_NAME#v}
+                  echo "Packing version $VERSION (from tag $GITHUB_REF_NAME)"
+                  dotnet pack -c Release --no-build -o artifacts \
+                    -p:ContinuousIntegrationBuild=true \
+                    -p:Version=$VERSION \
+                    -p:AssemblyVersion=$VERSION \
+                    -p:FileVersion=$VERSION
 
             - name: NuGet login (OIDC → temporary API key)
               id: nuget-login
