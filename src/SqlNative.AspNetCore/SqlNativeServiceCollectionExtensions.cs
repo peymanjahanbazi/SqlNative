@@ -23,6 +23,12 @@ public static class SqlNativeServiceCollectionExtensions
        where T : SqlNativeContext, new()
        where Connection : DbConnection, new()
     {
+        var config = new SqlNativeContextConfig()
+        {
+            IsDevelopMode = options.IsDevelopMode,
+            MaxParametersPerStatement = options.MaxParametersPerStatement,
+            MaxPacketSize = options.MaxPacketSize
+        };
         services.AddScoped<T>((IServiceProvider s) =>
         {
             Connection? connection = new()
@@ -30,7 +36,11 @@ public static class SqlNativeServiceCollectionExtensions
                 ConnectionString = options.ConnectionString
             };
             connection.Open();
-            var ctx = new T() { Connection = connection };
+            var ctx = new T()
+            {
+                Connection = connection,
+                Config = config
+            };
             return ctx;
         });
         return services;

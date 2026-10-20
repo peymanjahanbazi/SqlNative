@@ -1,6 +1,6 @@
 namespace SqlNative.AspNetCore;
 
-public enum ConnectionCreatePolicy
+internal enum ConnectionCreatePolicy
 {
     ConnectionPerContext,
     ConnectionPool

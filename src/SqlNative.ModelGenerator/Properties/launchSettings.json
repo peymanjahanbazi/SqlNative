@@ -1,28 +1,28 @@
 {
-  "profiles": {
-    "SqlNative.ModelGenerator - Help": {
-      "commandName": "Project",
-      "commandLineArgs": "--help"
-    },
-    "SqlNative.ModelGenerator - Generate": {
-      "commandName": "Project",
-      "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\Data\" --package \"SqlNative.ConsoleTest.Data\""
-    },
-    "SqlNative.ModelGenerator - Generate web": {
-      "commandName": "Project",
-      "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\WebApiTest\\Data\" --package \"SqlNative.ConsoleTest.Data\""
-    },
-    "SqlNative.ModelGenerator - Generate pg": {
-      "commandName": "Project",
-      "commandLineArgs": "--cs \"Host=localhost;Port=5432;Database=db1;Username=postgres;Password=postgres;\" --engine postgresql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\Datapg\" --package \"SqlNative.ConsoleTest.Datapg\""
-    },
-    "SqlNative.ModelGenerator - Generate ms": {
-      "commandName": "Project",
-      "commandLineArgs": "--cs \"Server=localhost;Database=db1;User Id=sa;Password=saPassword;TrustServerCertificate=True;\" --engine mssql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\DataMssql\" --package \"SqlNative.ConsoleTest.DataMssql\""
-    },
-    "SqlNative.ModelGenerator - Generate oracle": {
-      "commandName": "Project",
-      "commandLineArgs": "--cs \"User Id=SCH1;Password=YourNewPassword;Data Source=127.0.0.1:1521/freepdb1;\" --engine oracle --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\DataOracle\" --package \"SqlNative.ConsoleTest.DataOracle\""
+    "profiles": {
+        "SqlNative.ModelGenerator - Help": {
+            "commandName": "Project",
+            "commandLineArgs": "--help"
+        },
+        "SqlNative.ModelGenerator - Generate": {
+            "commandName": "Project",
+            "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\Data\" --package \"SqlNative.ConsoleTest.Data\""
+        },
+        "SqlNative.ModelGenerator - Generate web": {
+            "commandName": "Project",
+            "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNativeProjectRoot\\SqlNativeGithub\\src\\WebApiTest\\Data\" --package \"SqlNative.WebApiTest.Data\""
+        },
+        "SqlNative.ModelGenerator - Generate pg": {
+            "commandName": "Project",
+            "commandLineArgs": "--cs \"Host=localhost;Port=5432;Database=db1;Username=postgres;Password=postgres;\" --engine postgresql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\Datapg\" --package \"SqlNative.ConsoleTest.Datapg\""
+        },
+        "SqlNative.ModelGenerator - Generate ms": {
+            "commandName": "Project",
+            "commandLineArgs": "--cs \"Server=localhost;Database=db1;User Id=sa;Password=saPassword;TrustServerCertificate=True;\" --engine mssql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\DataMssql\" --package \"SqlNative.ConsoleTest.DataMssql\""
+        },
+        "SqlNative.ModelGenerator - Generate oracle": {
+            "commandName": "Project",
+            "commandLineArgs": "--cs \"User Id=SCH1;Password=YourNewPassword;Data Source=127.0.0.1:1521/freepdb1;\" --engine oracle --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\DataOracle\" --package \"SqlNative.ConsoleTest.DataOracle\""
+        }
     }
-  }
 }
