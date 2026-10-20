@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-
 namespace SqlNative;
 
-public abstract partial class DefaultContext
+public abstract partial class SqlNativeContext
 {
     private static bool IsAlphabetic(string value)
     {

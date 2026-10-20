@@ -2,4 +2,5 @@
   <Project Path="src/SqlNative.ModelGenerator/SqlNative.ModelGenerator.csproj" />
   <Project Path="src/SqlNative/SqlNative.csproj" />
   <Project Path="src/SqlNative.Core/SqlNative.Core.csproj" />
+  <Project Path="src/SqlNative.AspNetCore/SqlNative.AspNetCore.csproj" />
 </Solution>

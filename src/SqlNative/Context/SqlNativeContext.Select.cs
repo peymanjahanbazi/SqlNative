@@ -2,7 +2,7 @@ using System;
 
 namespace SqlNative;
 
-public abstract partial class DefaultContext
+public abstract partial class SqlNativeContext
 {
     private string GenerateJoin(JoinClause join)
     {

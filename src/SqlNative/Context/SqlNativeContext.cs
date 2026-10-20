@@ -2,22 +2,22 @@ using System.Data.Common;
 
 namespace SqlNative;
 
-public abstract partial class DefaultContext
+public abstract partial class SqlNativeContext
 {
-    public DefaultContext()
+    public SqlNativeContext()
     {
     }
 
     public DbConnection Connection { get; set; }
 
-    private ContextConfig config = new()
+    private SqlNativeContextConfig config = new()
     {
         IsDevelopMode = true,
         MaxPacketSize = 1_000_000,
         MaxParametersPerStatement = 60_000,
     };
 
-    public ContextConfig Config
+    public SqlNativeContextConfig Config
     {
         get
         {

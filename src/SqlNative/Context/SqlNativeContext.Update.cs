@@ -2,7 +2,7 @@ using System;
 
 namespace SqlNative;
 
-public abstract partial class DefaultContext
+public abstract partial class SqlNativeContext
 {
     public Query Update<T1>(Func<T1, UpdateModel> func)
        where T1 : TableStructure, new()

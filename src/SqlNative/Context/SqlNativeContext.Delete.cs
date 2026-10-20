@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace SqlNative;
 
-public abstract partial class DefaultContext
+public abstract partial class SqlNativeContext
 {
     public int DeleteById<T, TPk>(TPk pk)
         where T : TableStructure, HasPrimaryKey, new()

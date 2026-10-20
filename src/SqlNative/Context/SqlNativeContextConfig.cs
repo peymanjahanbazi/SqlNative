@@ -1,6 +1,6 @@
-﻿namespace SqlNative;
+namespace SqlNative;
 
-public class ContextConfig
+public class SqlNativeContextConfig
 {
     public bool IsDevelopMode { get; set; }
     public int MaxParametersPerStatement { get; set; }
