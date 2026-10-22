@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <PackageId>SqlNative</PackageId>
+    <Description>A light-weight ORM for .NET that doesn't hide the database. Map tables to C# types, get CRUD and
+      result mapping, and write the SQL yourself with tables, columns and expressions as compile-checked C#
+      identifiers. Runs on any ADO.NET DbConnection: SQL Server, MySQL, PostgreSQL and Oracle.</Description>
     <PackageTags>sql;database;native;orm</PackageTags>
     <IsPackable>true</IsPackable>
     <LangVersion>latest</LangVersion>

@@ -4,9 +4,12 @@
     <TargetFrameworks>net461;netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <PackageId>SqlNative.Core</PackageId>
-    <Authors>Peyman</Authors>
-    <Description>Core helpers for SqlNative: engine identifier helpers, CLR type mappers, and the
-      DatabaseEngine enum.</Description>
+    <Authors>Peyman Jahanbazi</Authors>
+    <Description>Dialect knowledge for the SqlNative light-weight ORM. Per-engine identifier helpers that turn
+      database names into legal C# identifiers and decide when an identifier needs quoting, and CLR type mappers
+      that turn a raw SQL type into a CLR type, nullability suffix and DbDataReader call. Covers SQL Server, MySQL,
+      PostgreSQL and Oracle. No dependencies.</Description>
+    <PackageTags>sql;database;native;orm;codegen</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamespace>SqlNative.Core</RootNamespace>
   </PropertyGroup>

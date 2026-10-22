@@ -5,9 +5,9 @@
     <LangVersion>latest</LangVersion>
     <PackageId>SqlNative.AspNetCore</PackageId>
     <Authors>Peyman Jahanbazi</Authors>
-    <Description>ASP.NET Core integration for SqlNative. Provides DI extension methods to register
-      SqlNative Query/Context types with the host's IServiceCollection and to expose them
-      over minimal APIs and controllers.</Description>
+    <Description>ASP.NET Core integration for the SqlNative light-weight ORM. Registers your SqlNativeContext in
+      the host's IServiceCollection, opens the DbConnection per scope and closes it on disposal, so controllers and
+      minimal API endpoints can take the context as a constructor parameter. Works with any ADO.NET provider.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamespace>SqlNative.AspNetCore</RootNamespace>
   </PropertyGroup>
