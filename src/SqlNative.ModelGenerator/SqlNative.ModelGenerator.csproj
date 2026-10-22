@@ -9,6 +9,7 @@
       Oracle schema and writes a complete typed data-access layer: a table structure class, a row model, a CRUD entity
       and a context, per table. Installed as the 'sqlnative-gen' dotnet tool.</Description>
     <PackageTags>sql;database;native;orm;codegen;generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IsPackable>true</IsPackable>
     <TargetFramework>net10.0</TargetFramework>
@@ -17,6 +18,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MySqlConnector" />

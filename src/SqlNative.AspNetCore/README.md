@@ -1,6 +1,6 @@
 # SqlNative.AspNetCore
 
-ASP.NET Core integration for [SqlNative](../SqlNative) — the light-weight ORM that keeps your SQL visible. This package is the DI glue: it registers your `SqlNativeContext` in the host's service collection so controllers and minimal API endpoints can take it as a constructor parameter, and it manages the lifetime of the underlying `DbConnection`.
+ASP.NET Core integration for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. This package is the DI glue: it registers your `SqlNativeContext` in the host's service collection so controllers and minimal API endpoints can take it as a constructor parameter, and it manages the lifetime of the underlying `DbConnection`.
 
 It does not change how you query. Everything else — the query builder, table and column classes, result mapping, CRUD — lives in the core package.
 

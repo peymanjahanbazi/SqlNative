@@ -8,9 +8,14 @@
     <Description>ASP.NET Core integration for the SqlNative light-weight ORM. Registers your SqlNativeContext in
       the host's IServiceCollection, opens the DbConnection per scope and closes it on disposal, so controllers and
       minimal API endpoints can take the context as a constructor parameter. Works with any ADO.NET provider.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamespace>SqlNative.AspNetCore</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Shared ASP.NET Core framework. Brings in Microsoft.AspNetCore.* reference assemblies. -->

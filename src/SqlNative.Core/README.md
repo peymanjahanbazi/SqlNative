@@ -1,6 +1,6 @@
 # SqlNative.Core
 
-Dialect knowledge for [SqlNative](../SqlNative) — the light-weight ORM that keeps your SQL visible. This package holds the two pieces of per-database logic that everything else depends on: how an identifier becomes a legal C# name in that database's dialect, and how a SQL type becomes a CLR type.
+Dialect knowledge for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. This package holds the two pieces of per-database logic that everything else depends on: how an identifier becomes a legal C# name in that database's dialect, and how a SQL type becomes a CLR type.
 
 It has **no dependencies and no ADO.NET providers**. It is pure string and regex work.
 

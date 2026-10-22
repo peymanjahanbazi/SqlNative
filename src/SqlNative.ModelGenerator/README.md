@@ -1,6 +1,6 @@
 # SqlNative.ModelGenerator
 
-Code generator for [SqlNative](../SqlNative) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD entity, and a context, for every table in the schema.
+Code generator for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD entity, and a context, for every table in the schema.
 
 Supports **SQL Server**, **MySQL**, **PostgreSQL** and **Oracle**. The generated code targets the core `SqlNative` package and compiles against any of its four dialect base classes.
 
@@ -351,7 +351,7 @@ public partial class FpprodContext : SqlNativeContext
 
 The property name is the table class name, so it lines up with the generated class you can `using` at the top of the file. If a table class happens to share the context's name, the property gets a `Table` suffix.
 
-Entities are constructed once per context, and the context is scoped per request — so **the context is not thread-safe**, and one context belongs to one request. For ASP.NET Core, register it with [`SqlNative.AspNetCore`](../SqlNative.AspNetCore):
+Entities are constructed once per context, and the context is scoped per request — so **the context is not thread-safe**, and one context belongs to one request. For ASP.NET Core, register it with [`SqlNative.AspNetCore`](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative.AspNetCore/README.md):
 
 ```csharp
 builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()
