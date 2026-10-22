@@ -2,7 +2,7 @@ using System.Data.Common;
 
 namespace SqlNative;
 
-public abstract partial class SqlNativeContext
+public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
 {
     public SqlNativeContext()
     {

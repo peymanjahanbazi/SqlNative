@@ -86,14 +86,14 @@ public class Query
 
     public object ExecuteScalar()
     {
-        var command = CreateCommand();
+        using var command = CreateCommand();
         var result = command.ExecuteScalar();
         return result;
     }
 
     public int ExecuteNonQuery()
     {
-        var command = CreateCommand();
+        using var command = CreateCommand();
         var result = command.ExecuteNonQuery();
         return result;
     }
@@ -101,7 +101,7 @@ public class Query
     public List<Result> Execute<Result>()
         where Result : new()
     {
-        var command = CreateCommand();
+        using var command = CreateCommand();
 
         var rows = QueryMapper.MapObject<Result>(command);
         return rows;
@@ -128,7 +128,7 @@ public class Query
         {
             modelFileName = fileName + "." + className + ".cs";
         }
-        var command = CreateCommand();
+        using var command = CreateCommand();
         using var reader = command.ExecuteReader();
         QueryModelGenerator.Model(reader, className, ns ?? "", Path.Combine(dir, modelFileName));
         return this;

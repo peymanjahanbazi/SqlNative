@@ -4,7 +4,8 @@
         <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+        <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
         <PackageVersion Include="MySqlConnector" Version="2.6.2" />
         <PackageVersion Include="Npgsql" Version="9.0.3" />
         <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.2" />

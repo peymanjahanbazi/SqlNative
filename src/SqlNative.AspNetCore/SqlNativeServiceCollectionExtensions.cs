@@ -36,12 +36,25 @@ public static class SqlNativeServiceCollectionExtensions
                 ConnectionString = options.ConnectionString
             };
             connection.Open();
-            var ctx = new T()
+
+            try
             {
-                Connection = connection,
-                Config = config
-            };
-            return ctx;
+                var ctx = new T()
+                {
+                    Connection = connection,
+                    Config = config
+                };
+                ctx.OwnsConnection = true;
+                return ctx;
+            }
+            catch
+            {
+                // new T() (or generated subclass ctor) threw after Open().
+                // Close + dispose the open connection and rethrow.
+                try { connection.Close(); } catch { }
+                connection.Dispose();
+                throw;
+            }
         });
         return services;
     }
