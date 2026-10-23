@@ -1,5 +1,3 @@
-using System;
-
 namespace SqlNative;
 
 public abstract class TableColumn
@@ -14,35 +12,32 @@ public abstract class TableColumn
 
     public TableStructure Table { get; private set; }
     public string Name { get; }
-    public string BaseParameter { get; }
-    private ushort idx = 0;
-    public string parameter => $"{BaseParameter}{++idx}";
+
+    //public string BaseParameter { get; }
+    //private ushort idx = 0;
+    //public string parameter => $"{BaseParameter}{++idx}";
     public Type DotnetType { get; }
+
     public string SqlType { get; }
 
     public static implicit operator string(TableColumn column)
     {
         if (column == null)
-            return null;
+            return "";
         return column.ToString();
     }
 
     public static string operator +(TableColumn a, TableColumn b)
     {
-        return $"{a}, {b}";
+        return $"{a} {b}";
     }
 
     public static string operator +(TableColumn a, string b)
     {
-        return $"{a}, {b}";
+        return $"{a} {b}";
     }
 
     public static string operator +(string a, TableColumn b)
-    {
-        return $"{a}, {b}";
-    }
-
-    public static string operator -(TableColumn a, TableColumn b)
     {
         return $"{a} {b}";
     }
