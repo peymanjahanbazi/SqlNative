@@ -7,7 +7,7 @@ namespace SqlNative.Core;
 public static partial class ClrTypeMapper
 {
     private static readonly Regex MySqlTypeRegex = new(
-        @"^\s*([a-z]+)\s*(?:\(\s*(\d+)\s*\))?\s*(unsigned)?\s*$",
+        @"^\s*([a-z]+)\s*(?:\(\s*(\d+)\s*(?:,\s*\d+\s*)?\))?\s*(unsigned)?\s*$",
         RegexOptions.IgnoreCase);
 
     private static readonly HashSet<string> BinaryTypes = new(StringComparer.Ordinal)
