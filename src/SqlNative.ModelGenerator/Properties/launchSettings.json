@@ -6,7 +6,7 @@
         },
         "SqlNative.ModelGenerator - Generate": {
             "commandName": "Project",
-            "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNative\\SqlNative.ConsoleTest\\Data\" --package \"SqlNative.ConsoleTest.Data\""
+            "commandLineArgs": "--cs \"Server=localhost;Database=fpprod;User=root;Password=root;\" --engine mysql --folder \"C:\\Users\\Peyman\\source\\repos\\SqlNativeProjectRoot\\SqlNativeGithub\\src\\SqlNative.ConsoleTest\\Data\" --package \"SqlNative.ConsoleTest.Data\""
         },
         "SqlNative.ModelGenerator - Generate web": {
             "commandName": "Project",

@@ -334,8 +334,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
         }
         else
         {
-            var allColumnsExpr = string.Join(" + ", allColumns.Select(c => "e." + c.StructureName));
-            var withoutPkColumnsExpr = string.Join(" + ", columnsWithoutPk.Select(c => "e." + c.StructureName));
+            var allColumnsExpr = BuildColumnsExpression(allColumns);
+            var withoutPkColumnsExpr = BuildColumnsExpression(columnsWithoutPk);
             var allValues = string.Join(", ", allColumns.Select(c => "@" + c.RowName));
             var withoutPkValues = string.Join(", ", columnsWithoutPk.Select(c => "@" + c.RowName));
             var allParameters = string.Join(", ", allColumns.Select(c => c.RowName + " = row." + c.RowName));
@@ -363,7 +363,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
                 builder.AppendLine("        {");
                 builder.AppendLine($"            var loaded = ctx.Insert<{className}>(e => new InsertModel");
                 builder.AppendLine("            {");
-                builder.AppendLine($"                Columns = skipPrimaryKey ? ({withoutPkColumnsExpr}) : ({allColumnsExpr}),");
+                builder.AppendLine($"                Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
                 builder.AppendLine($"                Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
                 builder.AppendLine("                Parameters = skipPrimaryKey");
                 builder.AppendLine($"                    ? (object)new {{ {withoutPkParameters} }}");
@@ -382,7 +382,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             }
             builder.AppendLine($"        var affected = ctx.Insert<{className}>(e => new InsertModel");
             builder.AppendLine("        {");
-            builder.AppendLine($"            Columns = skipPrimaryKey ? ({withoutPkColumnsExpr}) : ({allColumnsExpr}),");
+            builder.AppendLine($"            Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
             builder.AppendLine($"            Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
             builder.AppendLine("            Parameters = skipPrimaryKey");
             builder.AppendLine($"                ? (object)new {{ {withoutPkParameters} }}");
@@ -724,5 +724,21 @@ internal sealed class MsSqlModelWriter : IModelWriter
             : helper.WrapObjectName(table.Schema) + ".";
 
         return quotedSchema + quotedTable;
+    }
+
+    /// <summary>
+    /// Builds a C# interpolated string literal holding a comma separated list of table column
+    /// references (e.g. "$"{e.Id}, {e.Name}"").
+    /// The <c>+</c> operator on <see cref="SqlNative.TableColumn"/> joins with a space, which would
+    /// produce an invalid column list, so string interpolation is used instead.
+    /// </summary>
+    private static string BuildColumnsExpression(IReadOnlyList<ColumnModel> columns)
+    {
+        if (columns.Count == 0)
+        {
+            return "string.Empty";
+        }
+
+        return "$\"" + string.Join(", ", columns.Select(c => "{e." + c.StructureName + "}")) + "\"";
     }
 }

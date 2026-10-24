@@ -1,4 +1,4 @@
-﻿namespace SqlNative;
+namespace SqlNative;
 
 public static partial class SqlFunctions
 {
@@ -12,7 +12,7 @@ public static partial class SqlFunctions
     /// This is the way to build a column list now that <c>TableColumn + TableColumn</c> joins with a space.
     /// Null and blank arguments are dropped.
     /// </summary>
-    public static string List(params object[] args)
+    public static string CList(params object[] args)
     {
         if (args is null || args.Length == 0)
             return "";

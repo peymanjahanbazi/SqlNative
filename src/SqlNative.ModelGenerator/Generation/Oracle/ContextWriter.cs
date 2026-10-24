@@ -1,4 +1,3 @@
-using SqlNative.ModelGenerator.Generation;
 using System.Text;
 
 namespace SqlNative.ModelGenerator.Generation.Oracle;
@@ -15,7 +14,7 @@ internal sealed class OracleContextWriter : IContextWriter
         builder.AppendLine();
         builder.AppendLine($"namespace {packageNamespace};");
         builder.AppendLine();
-        builder.AppendLine($"public partial class {contextName} : DefaultContext");
+        builder.AppendLine($"public partial class {contextName} : SqlNativeContext");
         builder.AppendLine("{");
 
         foreach (var (className, entityClassName) in tables)
