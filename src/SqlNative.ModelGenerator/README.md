@@ -39,7 +39,7 @@ Or run it without installing:
 dotnet run --project path/to/SqlNative.ModelGenerator -- --help
 ```
 
-The tool itself targets `net10.0` and carries all four ADO.NET providers, so it can connect to any of the supported engines without extra packages on your side.
+The tool targets `net6.0`, `net8.0`, `net9.0`, and `net10.0`, and carries all four ADO.NET providers, so it can connect to any of the supported engines without extra packages on your side.
 
 ---
 

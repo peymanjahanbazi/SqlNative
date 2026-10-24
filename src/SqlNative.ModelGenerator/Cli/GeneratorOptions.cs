@@ -11,13 +11,13 @@ internal sealed record ParseResult(ParseStatus Status, GeneratorOptions? Options
 
 internal sealed record GeneratorOptions
 {
-    public required string ConnectionString { get; init; }
+    public string ConnectionString { get; init; } = string.Empty;
 
-    public required string Engine { get; init; }
+    public string Engine { get; init; } = string.Empty;
 
-    public required string Folder { get; init; }
+    public string Folder { get; init; } = string.Empty;
 
-    public required string Package { get; init; }
+    public string Package { get; init; } = string.Empty;
 
     public string? ContextName { get; init; }
 }
