@@ -4,6 +4,12 @@ namespace SqlNative;
 
 public abstract partial class SqlNativeContext
 {
+    /// <summary>
+    /// Creates an INSERT statement for the specified table.
+    /// </summary>
+    /// <typeparam name="T1">The table structure type.</typeparam>
+    /// <param name="func">A function that creates the insert model for the table.</param>
+    /// <returns>The query containing the INSERT statement.</returns>
     public Query Insert<T1>(Func<T1, InsertModel> func)
        where T1 : TableStructure, new()
     {

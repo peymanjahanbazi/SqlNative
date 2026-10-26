@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
-public static class OracleClrTypeMapper
+internal static class OracleClrTypeMapper
 {
     private static readonly Regex OracleTypeRegex = new(
         @"^\s*([a-z][a-z0-9_]*)\s*(?:\(\s*(\d+)\s*(?:,\s*\d+)?\s*\))?\s*$",

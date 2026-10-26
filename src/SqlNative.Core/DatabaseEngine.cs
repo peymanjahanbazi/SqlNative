@@ -1,6 +1,6 @@
 namespace SqlNative.Core;
 
-public enum DatabaseEngine
+internal enum DatabaseEngine
 {
     MySql,
     Postgres,

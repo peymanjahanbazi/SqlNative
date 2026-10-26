@@ -6,6 +6,13 @@ namespace SqlNative;
 
 public abstract partial class SqlNativeContext
 {
+    /// <summary>
+    /// Deletes the row with the specified primary key.
+    /// </summary>
+    /// <typeparam name="T">The table structure type.</typeparam>
+    /// <typeparam name="TPk">The primary key type.</typeparam>
+    /// <param name="pk">The primary key value of the row to delete.</param>
+    /// <returns>The number of rows affected.</returns>
     public int DeleteById<T, TPk>(TPk pk)
         where T : TableStructure, HasPrimaryKey, new()
     {
@@ -13,7 +20,14 @@ public abstract partial class SqlNativeContext
         return DeleteByIds<T, TPk>(new TPk[] { pk });
     }
 
-public int DeleteByIds<T, TPk>(IEnumerable<TPk> pks)
+    /// <summary>
+    /// Deletes the rows with the specified primary keys.
+    /// </summary>
+    /// <typeparam name="T">The table structure type.</typeparam>
+    /// <typeparam name="TPk">The primary key type.</typeparam>
+    /// <param name="pks">The primary key values of the rows to delete.</param>
+    /// <returns>The number of rows affected.</returns>
+    public int DeleteByIds<T, TPk>(IEnumerable<TPk> pks)
         where T : TableStructure, HasPrimaryKey, new()
     {
         if (pks is null) return 0;
@@ -53,6 +67,13 @@ public int DeleteByIds<T, TPk>(IEnumerable<TPk> pks)
         return affected;
     }
 
+    /// <summary>
+    /// Deletes the rows that match the specified predicate.
+    /// </summary>
+    /// <typeparam name="T">The table structure type.</typeparam>
+    /// <param name="predicate">A function that creates the WHERE predicate for the table.</param>
+    /// <param name="parameters">Optional parameter values used by the predicate.</param>
+    /// <returns>The number of rows affected.</returns>
     public int DeleteWhere<T>(Func<T, string> predicate, object parameters = null)
         where T : TableStructure, new()
     {
@@ -65,6 +86,11 @@ public int DeleteByIds<T, TPk>(IEnumerable<TPk> pks)
         ).ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Deletes all rows from the specified table.
+    /// </summary>
+    /// <typeparam name="T">The table structure type.</typeparam>
+    /// <returns>The number of rows affected.</returns>
     public int DeleteAll<T>() where T : TableStructure, new()
     {
         var t = new T { DisableAlias = true };

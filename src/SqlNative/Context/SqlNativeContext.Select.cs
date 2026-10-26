@@ -60,6 +60,12 @@ public abstract partial class SqlNativeContext
         .SetParameters(model.Parameters);
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 1 table structure with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1>(Func<T1, SelectModel> func)
        where T1 : TableStructure, new()
     {
@@ -71,6 +77,13 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 2 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2>(Func<T1, T2, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -83,6 +96,14 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 3 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3>(Func<T1, T2, T3, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -96,6 +117,15 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 4 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4>(Func<T1, T2, T3, T4, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -110,6 +140,16 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 5 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -125,6 +165,17 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 6 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6>(Func<T1, T2, T3, T4, T5, T6, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -141,6 +192,18 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 7 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7>(Func<T1, T2, T3, T4, T5, T6, T7, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -158,6 +221,19 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 8 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -176,6 +252,20 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 9 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -195,6 +285,21 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 10 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -215,6 +320,22 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 11 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <typeparam name="T11">The 11 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -236,6 +357,23 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 12 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <typeparam name="T11">The 11 table structure type.</typeparam>
+    /// <typeparam name="T12">The 12 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -258,6 +396,24 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 13 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <typeparam name="T11">The 11 table structure type.</typeparam>
+    /// <typeparam name="T12">The 12 table structure type.</typeparam>
+    /// <typeparam name="T13">The 13 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -281,6 +437,25 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 14 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <typeparam name="T11">The 11 table structure type.</typeparam>
+    /// <typeparam name="T12">The 12 table structure type.</typeparam>
+    /// <typeparam name="T13">The 13 table structure type.</typeparam>
+    /// <typeparam name="T14">The 14 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()
@@ -305,6 +480,26 @@ public abstract partial class SqlNativeContext
         );
     }
 
+    /// <summary>
+    /// Creates a SELECT query from 15 table structures with automatically assigned aliases.
+    /// </summary>
+    /// <typeparam name="T1">The 1 table structure type.</typeparam>
+    /// <typeparam name="T2">The 2 table structure type.</typeparam>
+    /// <typeparam name="T3">The 3 table structure type.</typeparam>
+    /// <typeparam name="T4">The 4 table structure type.</typeparam>
+    /// <typeparam name="T5">The 5 table structure type.</typeparam>
+    /// <typeparam name="T6">The 6 table structure type.</typeparam>
+    /// <typeparam name="T7">The 7 table structure type.</typeparam>
+    /// <typeparam name="T8">The 8 table structure type.</typeparam>
+    /// <typeparam name="T9">The 9 table structure type.</typeparam>
+    /// <typeparam name="T10">The 10 table structure type.</typeparam>
+    /// <typeparam name="T11">The 11 table structure type.</typeparam>
+    /// <typeparam name="T12">The 12 table structure type.</typeparam>
+    /// <typeparam name="T13">The 13 table structure type.</typeparam>
+    /// <typeparam name="T14">The 14 table structure type.</typeparam>
+    /// <typeparam name="T15">The 15 table structure type.</typeparam>
+    /// <param name="func">A function that creates the select model from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query Select<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, SelectModel> func)
         where T1 : TableStructure, new()
         where T2 : TableStructure, new()

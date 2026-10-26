@@ -85,6 +85,11 @@ public abstract partial class SqlNativeContext
         return lastResort;
     }
 
+    /// <summary>
+    /// Creates a query using the specified query-building function.
+    /// </summary>
+    /// <param name="func">A function that creates and configures the query.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery(Func<Query, Query> func)
     {
         var selectQuery = new Query
@@ -98,6 +103,12 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 1 table structure and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A>(Func<Query, A, Query> func)
         where A : TableStructure, new()
     {
@@ -116,6 +127,13 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 2 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B>(Func<Query, A, B, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -137,6 +155,14 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 3 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C>(Func<Query, A, B, C, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -161,6 +187,15 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 4 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D>(Func<Query, A, B, C, D, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -188,6 +223,16 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 5 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E>(Func<Query, A, B, C, D, E, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -218,6 +263,17 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 6 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F>(Func<Query, A, B, C, D, E, F, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -251,6 +307,18 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 7 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G>(Func<Query, A, B, C, D, E, F, G, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -287,6 +355,19 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 8 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H>(Func<Query, A, B, C, D, E, F, G, H, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -326,6 +407,20 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 9 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I>(Func<Query, A, B, C, D, E, F, G, H, I, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -368,6 +463,21 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 10 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J>(Func<Query, A, B, C, D, E, F, G, H, I, J, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -413,6 +523,22 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 11 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <typeparam name="K">The 11th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J, K>(Func<Query, A, B, C, D, E, F, G, H, I, J, K, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -461,6 +587,23 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 12 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <typeparam name="K">The 11th table structure type.</typeparam>
+    /// <typeparam name="L">The 12th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J, K, L>(Func<Query, A, B, C, D, E, F, G, H, I, J, K, L, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -512,6 +655,24 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 13 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <typeparam name="K">The 11th table structure type.</typeparam>
+    /// <typeparam name="L">The 12th table structure type.</typeparam>
+    /// <typeparam name="M">The 13th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J, K, L, M>(Func<Query, A, B, C, D, E, F, G, H, I, J, K, L, M, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -566,6 +727,25 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 14 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <typeparam name="K">The 11th table structure type.</typeparam>
+    /// <typeparam name="L">The 12th table structure type.</typeparam>
+    /// <typeparam name="M">The 13th table structure type.</typeparam>
+    /// <typeparam name="N">The 14th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J, K, L, M, N>(Func<Query, A, B, C, D, E, F, G, H, I, J, K, L, M, N, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()
@@ -623,6 +803,26 @@ public abstract partial class SqlNativeContext
         return selectQuery;
     }
 
+    /// <summary>
+    /// Creates a query builder for 15 table structures and assigns unique aliases to them.
+    /// </summary>
+    /// <typeparam name="A">The first table structure type.</typeparam>
+    /// <typeparam name="B">The 2th table structure type.</typeparam>
+    /// <typeparam name="C">The 3th table structure type.</typeparam>
+    /// <typeparam name="D">The 4th table structure type.</typeparam>
+    /// <typeparam name="E">The 5th table structure type.</typeparam>
+    /// <typeparam name="F">The 6th table structure type.</typeparam>
+    /// <typeparam name="G">The 7th table structure type.</typeparam>
+    /// <typeparam name="H">The 8th table structure type.</typeparam>
+    /// <typeparam name="I">The 9th table structure type.</typeparam>
+    /// <typeparam name="J">The 10th table structure type.</typeparam>
+    /// <typeparam name="K">The 11th table structure type.</typeparam>
+    /// <typeparam name="L">The 12th table structure type.</typeparam>
+    /// <typeparam name="M">The 13th table structure type.</typeparam>
+    /// <typeparam name="N">The 14th table structure type.</typeparam>
+    /// <typeparam name="O">The 15th table structure type.</typeparam>
+    /// <param name="func">A function that creates the query from the table structures.</param>
+    /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O>(Func<Query, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, Query> func)
         where A : TableStructure, new()
         where B : TableStructure, new()

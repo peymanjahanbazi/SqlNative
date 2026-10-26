@@ -4,6 +4,12 @@ namespace SqlNative;
 
 public abstract partial class SqlNativeContext
 {
+    /// <summary>
+    /// Creates an UPDATE statement for the specified table.
+    /// </summary>
+    /// <typeparam name="T1">The table structure type.</typeparam>
+    /// <param name="func">A function that creates the update model for the table.</param>
+    /// <returns>The query containing the UPDATE statement.</returns>
     public Query Update<T1>(Func<T1, UpdateModel> func)
        where T1 : TableStructure, new()
     {

@@ -2,16 +2,28 @@ using System;
 
 namespace SqlNative;
 
+/// <summary>
+/// Represents a PostgreSQL table column.
+/// </summary>
 public class PostgresColumn : TableColumn
 {
+    /// <summary>Initializes a new PostgreSQL column.</summary>
+    /// <param name="name">The column name.</param>
+    /// <param name="needsDoubleQuotes">Whether the name must be enclosed in double quotes.</param>
+    /// <param name="sqlType">The SQL data type of the column.</param>
+    /// <param name="dotnetType">The CLR type mapped to the column.</param>
+    /// <param name="table">The table that owns the column.</param>
     public PostgresColumn(string name, bool needsDoubleQuotes, string sqlType, Type dotnetType, PostgresTableStructure table)
         : base(name, sqlType, dotnetType, table)
     {
         NeedsDoubleQuotes = needsDoubleQuotes;
     }
 
+    /// <summary>Gets a value indicating whether the column name is enclosed in double quotes.</summary>
     public bool NeedsDoubleQuotes { get; }
 
+    /// <summary>Returns the PostgreSQL representation of this column.</summary>
+    /// <returns>The SQL text identifying this column.</returns>
     public override string ToString()
     {
         if (Table.DisableAlias)

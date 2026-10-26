@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
-public static class PostgresClrTypeMapper
+internal static class PostgresClrTypeMapper
 {
     private static readonly Regex PostgresTypeRegex = new(
         @"^\s*([a-z][a-z0-9_]*)\s*(?:\(\s*(\d+)\s*(?:,\s*\d+)?\s*\))?\s*(\[\s*\])?\s*$",

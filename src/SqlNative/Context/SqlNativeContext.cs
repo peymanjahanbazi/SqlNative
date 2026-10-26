@@ -2,12 +2,21 @@ using System.Data.Common;
 
 namespace SqlNative;
 
+/// <summary>
+/// Provides database query and command operations for a database connection.
+/// </summary>
 public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
 {
+    /// <summary>
+    /// Initializes a new context with its default configuration.
+    /// </summary>
     public SqlNativeContext()
     {
     }
 
+    /// <summary>
+    /// Gets or sets the database connection used by this context.
+    /// </summary>
     public DbConnection Connection { get; set; }
 
     private SqlNativeContextConfig config = new()
@@ -18,6 +27,9 @@ public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
         MaxParametersPerStatement = 60_000,
     };
 
+    /// <summary>
+    /// Gets or sets the configuration for this context.
+    /// </summary>
     public SqlNativeContextConfig Config
     {
         get

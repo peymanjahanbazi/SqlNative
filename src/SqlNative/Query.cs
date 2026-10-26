@@ -6,8 +6,14 @@ using System.Text;
 
 namespace SqlNative;
 
+/// <summary>
+/// Builds and executes SQL commands using provider-neutral SQL text.
+/// </summary>
 public class Query
 {
+    /// <summary>
+    /// Gets the SQL text accumulated by this query.
+    /// </summary>
     public string Sql
     {
         get
@@ -18,13 +24,26 @@ public class Query
 
     private Dictionary<string, object?> Parameters = new();
 
+    /// <summary>
+    /// Gets or sets the database connection used to execute this query.
+    /// </summary>
     public DbConnection Connection { get; internal set; }
 
+    /// <summary>
+    /// Gets a value indicating whether result models are generated for this query.
+    /// </summary>
     public bool GenerateModel { get; internal set; }
+
+    /// <summary>
+    /// Gets a value indicating whether generated SQL commands are written to the console.
+    /// </summary>
     public bool LogSqlCommand { get; internal set; }
 
     private StringBuilder sqlBuilder = new();
 
+    /// <summary>Appends SQL text to the query.</summary>
+    /// <param name="v">The SQL text to append.</param>
+    /// <returns>This query instance.</returns>
     public Query Append(string v)
     {
         if (string.IsNullOrWhiteSpace(v))
@@ -35,6 +54,10 @@ public class Query
         return this;
     }
 
+    /// <summary>Appends SQL text when the specified condition is true.</summary>
+    /// <param name="condition">Whether the text should be appended.</param>
+    /// <param name="v">The SQL text to append.</param>
+    /// <returns>This query instance.</returns>
     public Query AppendIf(bool condition, string v)
     {
         if (!condition || string.IsNullOrWhiteSpace(v))
@@ -45,18 +68,27 @@ public class Query
         return this;
     }
 
+    /// <summary>Replaces the current query parameters with the specified dictionary.</summary>
+    /// <param name="parameters">The parameters to use.</param>
+    /// <returns>This query instance.</returns>
     public Query SetParameters(Dictionary<string, object?> parameters)
     {
         this.Parameters.Clear();
         return AddParameters(parameters);
     }
 
+    /// <summary>Replaces the current query parameters with values from an object.</summary>
+    /// <param name="parameters">The object whose public properties supply parameter values.</param>
+    /// <returns>This query instance.</returns>
     public Query SetParameters(object parameters)
     {
         this.Parameters.Clear();
         return AddParameters(parameters);
     }
 
+    /// <summary>Adds the specified dictionary to the current query parameters.</summary>
+    /// <param name="parameters">The parameters to add.</param>
+    /// <returns>This query instance.</returns>
     public Query AddParameters(Dictionary<string, object?> parameters)
     {
         if (parameters == null) return this;
@@ -67,6 +99,9 @@ public class Query
         return this;
     }
 
+    /// <summary>Adds values from an object's public properties to the current query parameters.</summary>
+    /// <param name="parameters">The object whose public properties supply parameter values.</param>
+    /// <returns>This query instance.</returns>
     public Query AddParameters(object parameters)
     {
         if (parameters == null) return this;
@@ -81,6 +116,8 @@ public class Query
         return this;
     }
 
+    /// <summary>Executes the query and returns the first value of the first row.</summary>
+    /// <returns>The scalar result, or <see langword="null"/> when no value is returned.</returns>
     public object ExecuteScalar()
     {
         using var command = CreateCommand();
@@ -88,6 +125,8 @@ public class Query
         return result;
     }
 
+    /// <summary>Executes the query as a non-query command.</summary>
+    /// <returns>The number of rows affected.</returns>
     public int ExecuteNonQuery()
     {
         using var command = CreateCommand();
@@ -95,6 +134,9 @@ public class Query
         return result;
     }
 
+    /// <summary>Executes the query and maps the returned rows to result objects.</summary>
+    /// <typeparam name="Result">The result type to create for each row.</typeparam>
+    /// <returns>The mapped result rows.</returns>
     public List<Result> Execute<Result>()
         where Result : new()
     {
@@ -104,6 +146,15 @@ public class Query
         return rows;
     }
 
+    /// <summary>
+    /// Executes the query and optionally generates a model class describing its result columns.
+    /// </summary>
+    /// <typeparam name="T">The model type for which column metadata is generated.</typeparam>
+    /// <param name="className">The generated class name. When empty, a name is derived from the caller.</param>
+    /// <param name="ns">The generated class namespace. When empty, the namespace of <typeparamref name="T"/> is used.</param>
+    /// <param name="file">The source file path of the caller.</param>
+    /// <param name="member">The calling member name.</param>
+    /// <returns>This query instance.</returns>
     public Query Model<T>(string className = "",
         string ns = "",
         [CallerFilePath] string file = "",
@@ -162,11 +213,22 @@ public class Query
         return command;
     }
 
+    /// <summary>Appends text generated for every item in a list.</summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="func">The function that generates text for each item.</param>
+    /// <returns>This query instance.</returns>
     public Query AppendFor<T>(List<T> items, Func<T, string> func)
     {
         return this.AppendFor("", items, func);
     }
 
+    /// <summary>Appends text generated for every item in a list, separated by the specified join text.</summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="join">The separator inserted between generated items.</param>
+    /// <param name="items">The items to process.</param>
+    /// <param name="func">The function that generates text for each item.</param>
+    /// <returns>This query instance.</returns>
     public Query AppendFor<T>(string join, List<T> items, Func<T, string> func)
     {
         for (int i = 0; i < items.Count; i++)
@@ -177,6 +239,9 @@ public class Query
         return this;
     }
 
+    /// <summary>Invokes a configuration action and returns this query instance.</summary>
+    /// <param name="value">The configuration action to invoke.</param>
+    /// <returns>This query instance.</returns>
     public Query Config(Action value)
     {
         value();

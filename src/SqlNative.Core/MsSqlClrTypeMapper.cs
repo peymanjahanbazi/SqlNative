@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
-public static class MsSqlClrTypeMapper
+internal static class MsSqlClrTypeMapper
 {
     private static readonly Regex MsSqlTypeRegex = new(
         @"^\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:\(\s*(\d+(?:\s*,\s*\d+)?)\s*\))?\s*(max)?\s*$",

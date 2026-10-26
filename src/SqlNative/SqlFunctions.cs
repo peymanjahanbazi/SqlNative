@@ -1,5 +1,8 @@
 namespace SqlNative;
 
+/// <summary>
+/// Provides reusable SQL expression helpers.
+/// </summary>
 public static partial class SqlFunctions
 {
     /// <summary>

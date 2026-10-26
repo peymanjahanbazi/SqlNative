@@ -18,7 +18,8 @@ public static class SqlNativeServiceCollectionExtensions
     /// <param name="services">The host's service collection.</param>
     /// <param name="options">Parameter to instanciate SqlNativeContext.</param>
     /// <returns>The same <see cref="IServiceCollection"/> for chaining.</returns>
-
+    /// <typeparam name="T">The SqlNative context type registered in the dependency-injection container.</typeparam>
+    /// <typeparam name="Connection">The ADO.NET connection type created for each scope.</typeparam>
     public static IServiceCollection AddSqlNativeContext<T, Connection>(this IServiceCollection services, SqlNativeOptions options)
        where T : SqlNativeContext, new()
        where Connection : DbConnection, new()
@@ -26,6 +27,7 @@ public static class SqlNativeServiceCollectionExtensions
         var config = new SqlNativeContextConfig()
         {
             IsDevelopMode = options.IsDevelopMode,
+            LogSqlCommands = options.LogSqlCommands,
             MaxParametersPerStatement = options.MaxParametersPerStatement,
             MaxPacketSize = options.MaxPacketSize
         };
@@ -58,14 +60,4 @@ public static class SqlNativeServiceCollectionExtensions
         });
         return services;
     }
-
-    //public static IServiceCollection AddSqlNative(this IServiceCollection services)
-    //{
-    //    ArgumentNullException.ThrowIfNull(services);
-
-    //    // Reserved for future registrations (IDbConnectionFactory, DefaultContext, etc.).
-    //    // Kept intentionally empty for now so consumers can start using the package
-    //    // without a breaking change once concrete registrations are introduced.
-    //    return services;
-    //}
 }

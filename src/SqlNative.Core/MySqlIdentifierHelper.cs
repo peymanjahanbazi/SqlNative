@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
-public static class MySqlIdentifierHelper
+internal static class MySqlIdentifierHelper
 {
     private static readonly Regex _nonAlphanumericRegex = new Regex(@"[^A-Za-z0-9]+");
 

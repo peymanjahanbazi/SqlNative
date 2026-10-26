@@ -19,12 +19,19 @@ public abstract partial class SqlNativeContext
         set => _ownsConnection = value;
     }
 
+    /// <summary>
+    /// Releases the resources owned by this context asynchronously.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous disposal operation.</returns>
     public async ValueTask DisposeAsync()
     {
         await DisposeAsyncCore().ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Releases the resources owned by this context.
+    /// </summary>
     public void Dispose()
     {
         // Mirror EF Core's pattern: sync path forwards to async so cleanup

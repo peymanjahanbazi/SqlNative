@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
-public static partial class ClrTypeMapper
+internal static partial class ClrTypeMapper
 {
     private static readonly Regex MySqlTypeRegex = new(
         @"^\s*([a-z]+)\s*(?:\(\s*(\d+)\s*(?:,\s*\d+\s*)?\))?\s*(unsigned)?\s*$",
