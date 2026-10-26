@@ -1,12 +1,9 @@
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
 internal static class MsSqlIdentifierHelper
 {
-    private static readonly Regex _nonAlphanumericRegex = new Regex(@"[^A-Za-z0-9]+");
-
     private static readonly HashSet<string> _tsqlReservedWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "add", "all", "alter", "and", "any", "as", "asc", "authorization", "backup",
@@ -38,34 +35,14 @@ internal static class MsSqlIdentifierHelper
 
     public static string GetObjectNameInCs(string originalname)
     {
-        var parts = _nonAlphanumericRegex.Split(originalname.Trim());
-        var builder = new StringBuilder();
+        var name = IdentifierNameConverter.ToPascalCase(originalname);
 
-        foreach (var part in parts)
+        if (char.IsDigit(name[0]) || name[0] == '_')
         {
-            if (part.Length == 0)
-            {
-                continue;
-            }
-
-            builder.Append(char.ToUpperInvariant(part[0]));
-            if (part.Length > 1)
-            {
-                builder.Append(part.Substring(1).ToLowerInvariant());
-            }
+            name = "_" + name;
         }
 
-        if (builder.Length == 0)
-        {
-            return "Item";
-        }
-
-        if (char.IsDigit(builder[0]) || builder[0] == '_')
-        {
-            builder.Insert(0, '_');
-        }
-
-        return builder.ToString();
+        return name;
     }
 
     public static string WrapObjectName(string objectName)

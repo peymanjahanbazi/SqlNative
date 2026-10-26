@@ -157,6 +157,7 @@ All three classes for a table live in one file, named after the table class. The
 | PostgreSQL table class | `<Schema>_<Table>`, sanitised to PascalCase | `public.Emp` → `PublicEmp` |
 | MySQL table class | `<Table>`, sanitised to PascalCase | `countries` → `Countries` |
 | Oracle table class | `<Table>`, sanitised to PascalCase | `NEWTABLE` → `Newtable` |
+| Column property | `<Column>`, sanitised to PascalCase | `CountryCode` → `CountryCode`, `first_name` → `FirstName` |
 | Row class | `<TableClass>Row` | `CountriesRow` |
 | Entity class | `<TableClass>Entity` | `CountriesEntity` |
 | Context class | `--context`, else `<DatabaseName>Context` | `fpprod` → `FpprodContext` |
@@ -182,7 +183,7 @@ public partial class Countries : MySqlTableStructure, HasPrimaryKey
     public TableColumn Id { get; private set; }
     public TableColumn Name { get; private set; }
     public TableColumn Iso { get; private set; }
-    public TableColumn Createuserid { get; private set; }
+    public TableColumn CreateUserId { get; private set; }
 
     public override TableColumn? PKey => Id;
 
@@ -191,7 +192,7 @@ public partial class Countries : MySqlTableStructure, HasPrimaryKey
         Id = new MySqlColumn("Id", false, "bigint(20)", typeof(long), this);
         Name = new MySqlColumn("Name", false, "varchar(100)", typeof(string), this);
         Iso = new MySqlColumn("ISO", false, "varchar(2)", typeof(string), this);
-        Createuserid = new MySqlColumn("CreateUserId", false, "bigint(20)", typeof(long), this);
+        CreateUserId = new MySqlColumn("CreateUserId", false, "bigint(20)", typeof(long), this);
     }
 }
 ```
@@ -207,11 +208,11 @@ public partial class Countries : MySqlTableStructure, HasPrimaryKey
 | `PKey` | The primary key column, or `null` if the table has none. |
 | `HasPrimaryKey` | Implemented only when the table actually has a primary key — it is what unlocks `DeleteById` / `DeleteByIds`. |
 
-**The constructor matters.** It calls the base constructor once per column, passing the *real* database column name (so `ISO` and `CreateUserId` keep their casing), the *raw* SQL type as read from the catalog (`bigint(20)`, `varchar(2)`), the mapped CLR type, and `this`. The C# property name is normalised to PascalCase (`CreateUserid` for `CreateUserId`) because the identifier helper strips characters it can't use.
+**The constructor matters.** It calls the base constructor once per column, passing the *real* database column name (so `ISO` and `CreateUserId` keep their casing), the *raw* SQL type as read from the catalog (`bigint(20)`, `varchar(2)`), the mapped CLR type, and `this`. The C# property name is normalised to PascalCase (`CreateUserId` for `CreateUserId`, `SurfaceArea` for `SurfaceArea`) because the identifier helper strips characters it can't use.
 
 The third constructor argument — the `needsBrackets` / `needsBackticks` / `needsDoubleQuotes` flag — is emitted per dialect, not per column style. SQL Server emits `false` here and `true` for identifiers that actually need it; MySQL emits `false`; PostgreSQL and Oracle emit `true`. See [Dialect differences](#dialect-differences).
 
-**Column names differ from property names.** `CreateUserId` → property `Createuserid`. Use the property in C#, and the SQL still emits `CreateUserId`.
+**Column names differ from property names.** `CreateUserId` → property `CreateUserId`, but `ISO` → property `Iso` and `first_name` → property `FirstName`. Use the property in C#, and the SQL still emits the original column name.
 
 ### 2. The row model
 

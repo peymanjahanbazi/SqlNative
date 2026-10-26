@@ -1,12 +1,9 @@
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SqlNative.Core;
 
 internal static class OracleIdentifierHelper
 {
-    private static readonly Regex _nonAlphanumericRegex = new Regex(@"[^A-Za-z0-9_]+");
-
     // Oracle reserved words (Oracle Database 19c/21c Reserved and Keywords).
     // These are commonly used identifiers in Oracle that require quoting.
     private static readonly HashSet<string> _oracleReservedWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -26,34 +23,14 @@ internal static class OracleIdentifierHelper
 
     public static string GetObjectNameInCs(string originalname)
     {
-        var parts = _nonAlphanumericRegex.Split(originalname.Trim());
-        var builder = new StringBuilder();
+        var name = IdentifierNameConverter.ToPascalCase(originalname);
 
-        foreach (var part in parts)
+        if (char.IsDigit(name[0]))
         {
-            if (part.Length == 0)
-            {
-                continue;
-            }
-
-            builder.Append(char.ToUpperInvariant(part[0]));
-            if (part.Length > 1)
-            {
-                builder.Append(part.Substring(1).ToLowerInvariant());
-            }
+            name = "_" + name;
         }
 
-        if (builder.Length == 0)
-        {
-            return "Item";
-        }
-
-        if (char.IsDigit(builder[0]))
-        {
-            builder.Insert(0, '_');
-        }
-
-        return builder.ToString();
+        return name;
     }
 
     public static string WrapObjectName(string objectName)

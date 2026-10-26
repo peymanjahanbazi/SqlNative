@@ -57,10 +57,11 @@ One per engine. The API is identical across all four except for the name of the 
 
 ### `GetObjectNameInCs(string originalname)`
 
-The one that matters most. It splits the identifier on every non-alphanumeric run, upper-cases the first letter of each part and lower-cases the rest:
+The one that matters most. It splits the identifier on every non-alphanumeric run and capitalises each part. A part that already mixes upper and lower case keeps its own word boundaries; a part that is entirely upper or entirely lower case is title cased:
 
 ```csharp
-MsSqlIdentifierHelper.GetObjectNameInCs("CreateUserId");  // "Createuserid"
+MsSqlIdentifierHelper.GetObjectNameInCs("CreateUserId");  // "CreateUserId"
+MsSqlIdentifierHelper.GetObjectNameInCs("CountryCode");   // "CountryCode"
 MsSqlIdentifierHelper.GetObjectNameInCs("ISO3");          // "Iso3"
 MsSqlIdentifierHelper.GetObjectNameInCs("dbo_Emp");       // "DboEmp"
 MsSqlIdentifierHelper.GetObjectNameInCs("public.Emp");    // "PublicEmp"
@@ -73,7 +74,7 @@ Two edge cases:
 - An identifier that starts with a digit gets an `_` prefix — `_2fa`, not `2fa`. (`MsSqlIdentifierHelper` also prefixes when the result starts with `_`.)
 - An empty or fully-punctuation identifier becomes `"Item"`.
 
-Note the casing: only the **first** character of each part is preserved in upper case, everything after it is lower-cased. That's why `CreateUserId` becomes `Createuserid` — the same convention C# uses for private fields. It's deliberate, but it means the C# property name rarely matches the SQL column name; the generated code always emits the original column name separately.
+Note the casing: a word is left alone when it mixes upper and lower case, because it already marks its own boundaries — `CountryCode` stays `CountryCode` and `SurfaceArea` stays `SurfaceArea`. A word with no internal capitalisation is title cased, so `ISO` becomes `Iso` and `first_name` becomes `FirstName`. The C# property name therefore usually matches the SQL column name, but not always: the generated code always emits the original column name separately.
 
 ### `WrapObjectName(string objectName)`
 
