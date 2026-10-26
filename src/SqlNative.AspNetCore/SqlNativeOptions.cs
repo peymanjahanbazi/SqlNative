@@ -11,7 +11,7 @@ public class SqlNativeOptions
     public bool IsDevelopMode { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets whether SQL commands are written to the console.
+    /// Gets or sets whether SQL commands are written to the host's logger.
     /// </summary>
     public bool LogSqlCommands { get; set; } = false;
 

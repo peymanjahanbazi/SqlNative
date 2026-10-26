@@ -19,6 +19,7 @@ This is the core package. It contains the query builder, the table/column model,
 - [Generating models](#generating-models)
 - [Typed entities](#typed-entities)
 - [Configuration and lifecycle](#configuration-and-lifecycle)
+- [Logging](#logging)
 - [Supported databases](#supported-databases)
 - [Related packages](#related-packages)
 - [Current status](#current-status)
@@ -418,6 +419,24 @@ await using var ctx = new Db1Context(connection) { OwnsConnection = false };
 ```
 
 `Dispose()` forwards to `DisposeAsync()`, and close/dispose failures are swallowed — a context being torn down shouldn't mask the exception that got you there.
+
+---
+
+## Logging
+
+Set `Logger` on the context to route the executed SQL through `Microsoft.Extensions.Logging` instead of the console:
+
+```csharp
+ctx.Logger = loggerFactory.CreateLogger("SqlNative");
+ctx.BuildQuery(q => q.Append("SELECT * FROM emp")).ExecuteNonQuery();
+// log: Information: SQL command: SELECT * FROM emp
+```
+
+The command is written at `Information` level with the SQL as the `Sql` property, so a log sink can pick it out by property name. While `Logger` is `null` the command goes to the console, as it always did.
+
+What gets written is the command text with parameters already substituted — numeric and boolean parameters are inlined as literals, everything else stays a `@parameter` placeholder. Treat the log as sensitive if your inline values are.
+
+Whether anything is written at all is controlled by `LogSqlCommands` on the config (`IsDevelopMode` turns it on too). The `SqlNative.AspNetCore` package wires the host's logger into the context for you.
 
 ---
 

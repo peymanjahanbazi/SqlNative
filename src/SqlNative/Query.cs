@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Data.Common;
 using System.Globalization;
 using System.Reflection;
@@ -35,9 +36,16 @@ public class Query
     public bool GenerateModel { get; internal set; }
 
     /// <summary>
-    /// Gets a value indicating whether generated SQL commands are written to the console.
+    /// Gets a value indicating whether generated SQL commands are written to the logger,
+    /// or to the console when no logger is set.
     /// </summary>
     public bool LogSqlCommand { get; internal set; }
+
+    /// <summary>
+    /// Gets the logger used to write generated SQL commands.
+    /// When <see langword="null"/>, the commands are written to the console instead.
+    /// </summary>
+    public ILogger? Logger { get; internal set; }
 
     private StringBuilder sqlBuilder = new();
 
@@ -208,7 +216,12 @@ public class Query
         }
         command.CommandText = sql.ToString();
         if (LogSqlCommand)
-            Console.WriteLine(command.CommandText);
+        {
+            if (Logger is not null)
+                Logger.LogInformation("SQL command: {Sql}", command.CommandText);
+            else
+                Console.WriteLine(command.CommandText);
+        }
 
         return command;
     }

@@ -26,6 +26,14 @@
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
   <ItemGroup>
+    <!-- ILogger is the logging seam of the core package: the ASP.NET Core adapter
+         hands it the host's logger, and the console fallback lives in Query.CreateCommand.
+         net461 is only supported up to 6.0 of the logging abstractions; the other
+         target frameworks use the centrally defined version. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="6.0.0" Condition="'$(TargetFramework)' == 'net461'" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Condition="'$(TargetFramework)' != 'net461'" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\SqlNative.Core\SqlNative.Core.csproj" />
   </ItemGroup>
 </Project>

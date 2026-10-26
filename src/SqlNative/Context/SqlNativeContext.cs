@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Data.Common;
 
 namespace SqlNative;
@@ -18,6 +19,12 @@ public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
     /// Gets or sets the database connection used by this context.
     /// </summary>
     public DbConnection Connection { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logger used to write executed SQL commands.
+    /// When <see langword="null"/>, the commands are written to the console instead.
+    /// </summary>
+    public ILogger? Logger { get; set; }
 
     private SqlNativeContextConfig config = new()
     {

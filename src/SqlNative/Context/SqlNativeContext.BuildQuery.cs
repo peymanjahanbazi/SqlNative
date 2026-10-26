@@ -97,6 +97,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery = func(selectQuery);
 
@@ -120,6 +121,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a);
@@ -148,6 +150,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b);
@@ -180,6 +183,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c);
@@ -216,6 +220,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d);
@@ -256,6 +261,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e);
@@ -300,6 +306,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f);
@@ -348,6 +355,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g);
@@ -400,6 +408,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h);
@@ -456,6 +465,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i);
@@ -516,6 +526,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j);
@@ -580,6 +591,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k);
@@ -648,6 +660,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l);
@@ -720,6 +733,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m);
@@ -796,6 +810,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
@@ -876,6 +891,7 @@ public abstract partial class SqlNativeContext
             Connection = Connection,
             GenerateModel = Config.IsDevelopMode,
             LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            Logger = Logger,
         };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);

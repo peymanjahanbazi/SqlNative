@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Data.Common;
 
 namespace SqlNative.AspNetCore;
@@ -47,6 +48,10 @@ public static class SqlNativeServiceCollectionExtensions
                     Config = config
                 };
                 ctx.OwnsConnection = true;
+                // The host's logger, so executed commands go to the app's logging
+                // pipeline instead of the console. Null when no logger factory is registered.
+                // One stable category, so a host can filter it with "LogLevel": { "SqlNative": "Information" }.
+                ctx.Logger = s.GetService<ILoggerFactory>()?.CreateLogger("SqlNative");
                 return ctx;
             }
             catch

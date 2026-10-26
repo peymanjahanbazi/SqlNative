@@ -92,6 +92,11 @@ The generic parameters are your context type and your provider's connection type
 2. **Opens the connection immediately.**
 3. Constructs `TContext` and assigns `Connection` and `Config` (built from the options you passed).
 4. Sets `OwnsConnection = true`.
+5. Assigns the host's `ILogger` to `TContext.Logger`, so executed SQL commands go to the app's logging pipeline instead of the console. The category is `SqlNative`, so the host can turn the commands on or off by level:
+
+```json
+"Logging": { "LogLevel": { "SqlNative": "Information" } }
+```
 
 Because the context is scoped and owns its connection, the container disposes it at the end of the request, and disposal closes and disposes the connection. You don't open, close, or dispose anything yourself.
 
@@ -120,6 +125,7 @@ builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()
 | --- | --- | --- |
 | `ConnectionString` | `""` | Assigned to the connection before it is opened. Required. |
 | `IsDevelopMode` | `false` | Forwarded to `SqlNativeContextConfig`. |
+| `LogSqlCommands` | `false` | Forwarded to `SqlNativeContextConfig`; writes every executed SQL command to the host's `ILogger`. `IsDevelopMode` turns it on too. |
 | `MaxParametersPerStatement` | `60_000` | Forwarded to `SqlNativeContextConfig`; batch size for `DeleteByIds` and generated entities. |
 | `MaxPacketSize` | `1_000_000` | Forwarded to `SqlNativeContextConfig`. |
 
@@ -177,7 +183,7 @@ This package is deliberately small. Not implemented yet:
 - **Connection pooling.** `ConnectionCreatePolicy` (`ConnectionPerContext` / `ConnectionPool`) is declared but `internal`, and the corresponding properties are commented out in `SqlNativeOptions`. Every scoped context opens its own connection; pooling is left to the provider.
 - **A bare `AddSqlNative()`** for when you only want the core services — the method is written but commented out.
 - **Async query execution.** `Execute<T>()` is synchronous, and this package doesn't change that.
-- **Health checks, interceptors and logging hooks.** Nothing is wired into `ILogger`; note that the core package currently writes every executed command to the console.
+- **Health checks, interceptors and logging hooks.** Executed SQL commands are written to the host's `ILogger`; health checks and command interceptors are not wired up.
 
 ---
 
