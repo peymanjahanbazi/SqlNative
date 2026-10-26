@@ -87,8 +87,12 @@ public abstract partial class SqlNativeContext
 
     public Query BuildQuery(Func<Query, Query> func)
     {
-        var selectQuery = new Query();
-        selectQuery.Connection = Connection;
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery = func(selectQuery);
 
         return selectQuery;
@@ -100,7 +104,12 @@ public abstract partial class SqlNativeContext
         var used = new HashSet<string>();
         var a = new A();
         a.Alias = GetAlias(used, a.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a);
 
@@ -116,7 +125,12 @@ public abstract partial class SqlNativeContext
         a.Alias = GetAlias(used, a.TableName);
         var b = new B();
         b.Alias = GetAlias(used, b.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b);
 
@@ -135,7 +149,12 @@ public abstract partial class SqlNativeContext
         b.Alias = GetAlias(used, b.TableName);
         var c = new C();
         c.Alias = GetAlias(used, c.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c);
 
@@ -157,7 +176,12 @@ public abstract partial class SqlNativeContext
         c.Alias = GetAlias(used, c.TableName);
         var d = new D();
         d.Alias = GetAlias(used, d.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d);
 
@@ -182,7 +206,12 @@ public abstract partial class SqlNativeContext
         d.Alias = GetAlias(used, d.TableName);
         var e = new E();
         e.Alias = GetAlias(used, e.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e);
 
@@ -210,7 +239,12 @@ public abstract partial class SqlNativeContext
         e.Alias = GetAlias(used, e.TableName);
         var f = new F();
         f.Alias = GetAlias(used, f.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f);
 
@@ -241,7 +275,12 @@ public abstract partial class SqlNativeContext
         f.Alias = GetAlias(used, f.TableName);
         var g = new G();
         g.Alias = GetAlias(used, g.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g);
 
@@ -275,7 +314,12 @@ public abstract partial class SqlNativeContext
         g.Alias = GetAlias(used, g.TableName);
         var h = new H();
         h.Alias = GetAlias(used, h.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h);
 
@@ -312,7 +356,12 @@ public abstract partial class SqlNativeContext
         h.Alias = GetAlias(used, h.TableName);
         var i = new I();
         i.Alias = GetAlias(used, i.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i);
 
@@ -352,7 +401,12 @@ public abstract partial class SqlNativeContext
         i.Alias = GetAlias(used, i.TableName);
         var j = new J();
         j.Alias = GetAlias(used, j.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j);
 
@@ -395,7 +449,12 @@ public abstract partial class SqlNativeContext
         j.Alias = GetAlias(used, j.TableName);
         var k = new K();
         k.Alias = GetAlias(used, k.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k);
 
@@ -441,7 +500,12 @@ public abstract partial class SqlNativeContext
         k.Alias = GetAlias(used, k.TableName);
         var l = new L();
         l.Alias = GetAlias(used, l.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l);
 
@@ -490,7 +554,12 @@ public abstract partial class SqlNativeContext
         l.Alias = GetAlias(used, l.TableName);
         var m = new M();
         m.Alias = GetAlias(used, m.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m);
 
@@ -542,7 +611,12 @@ public abstract partial class SqlNativeContext
         m.Alias = GetAlias(used, m.TableName);
         var n = new N();
         n.Alias = GetAlias(used, n.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
 
@@ -597,7 +671,12 @@ public abstract partial class SqlNativeContext
         n.Alias = GetAlias(used, n.TableName);
         var o = new O();
         o.Alias = GetAlias(used, o.TableName);
-        var selectQuery = new Query();
+        var selectQuery = new Query
+        {
+            Connection = Connection,
+            GenerateModel = Config.IsDevelopMode,
+            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+        };
         selectQuery.Connection = Connection;
         selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
 

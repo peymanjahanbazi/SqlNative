@@ -16,11 +16,12 @@ public class Query
         }
     }
 
-    private IEnumerable<KeyValuePair<string, object>> Parameters => GetParameters();
+    private Dictionary<string, object?> Parameters = new();
 
     public DbConnection Connection { get; internal set; }
 
-    private object ParameterObjects;
+    public bool GenerateModel { get; internal set; }
+    public bool LogSqlCommand { get; internal set; }
 
     private StringBuilder sqlBuilder = new();
 
@@ -44,41 +45,40 @@ public class Query
         return this;
     }
 
-    public Query SetParameters(Dictionary<string, object?> value)
+    public Query SetParameters(Dictionary<string, object?> parameters)
     {
-        this.ParameterObjects = value;
+        this.Parameters.Clear();
+        return AddParameters(parameters);
+    }
+
+    public Query SetParameters(object parameters)
+    {
+        this.Parameters.Clear();
+        return AddParameters(parameters);
+    }
+
+    public Query AddParameters(Dictionary<string, object?> parameters)
+    {
+        if (parameters == null) return this;
+        foreach (var kvp in parameters)
+        {
+            this.Parameters[kvp.Key] = kvp.Value;
+        }
         return this;
     }
 
-    public Query SetParameters(object value)
+    public Query AddParameters(object parameters)
     {
-        this.ParameterObjects = value;
-        return this;
-    }
+        if (parameters == null) return this;
 
-    private IEnumerable<KeyValuePair<string, object>> GetParameters()
-    {
-        if (ParameterObjects == null)
-        {
-            yield break;
-        }
-        if (ParameterObjects is Dictionary<string, object> paramDict)
-        {
-            foreach (var kvp in paramDict)
-            {
-                yield return kvp;
-            }
-        }
-        else
-        {
-            var properties = ParameterObjects.GetType()
+        var properties = parameters.GetType()
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            foreach (var property in properties)
-            {
-                yield return new KeyValuePair<string, object>(property.Name, property.GetValue(ParameterObjects));
-            }
+        foreach (var property in properties)
+        {
+            Parameters[property.Name] = property.GetValue(parameters);
         }
+        return this;
     }
 
     public object ExecuteScalar()
@@ -109,7 +109,7 @@ public class Query
         [CallerFilePath] string file = "",
         [CallerMemberName] string member = "")
     {
-        Console.WriteLine(file);
+        if (!GenerateModel) return this;
         string? dir = Path.GetDirectoryName(file);
         string fileName = Path.GetFileNameWithoutExtension(file);
         Type type = typeof(T);
@@ -156,7 +156,8 @@ public class Query
             command.Parameters.Add(dbParam);
         }
         command.CommandText = sql.ToString();
-        Console.WriteLine(command.CommandText);
+        if (LogSqlCommand)
+            Console.WriteLine(command.CommandText);
 
         return command;
     }

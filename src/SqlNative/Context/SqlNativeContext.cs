@@ -13,6 +13,7 @@ public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
     private SqlNativeContextConfig config = new()
     {
         IsDevelopMode = true,
+        LogSqlCommands = true,
         MaxPacketSize = 1_000_000,
         MaxParametersPerStatement = 60_000,
     };

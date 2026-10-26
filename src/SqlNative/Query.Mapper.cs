@@ -1,5 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Reflection;
 using System.Text;
@@ -17,9 +15,10 @@ internal class QueryMapper
             int[] orders = null;
             while (reader.Read())
             {
-                Result row = new Result();
-                orders ??= (row as QueryResult).GetOrders(reader);
-                (row as QueryResult).SetFields(reader, orders);
+                Result row = new();
+                QueryResult qr = row as QueryResult;
+                orders ??= qr.GetOrders(reader);
+                qr.SetFields(reader, orders);
                 rows.Add(row);
             }
             return rows;
