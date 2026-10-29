@@ -274,26 +274,31 @@ public partial class CountriesEntity : DbEntity<CountriesRow, Countries, long>
 
 **Generated overrides:**
 
+The asynchronous methods are the primary implementation and must be overridden. The
+synchronous methods on `DbEntity` are concrete wrappers that call the asynchronous ones, so
+both paths run the same code.
+
 | Method | What it does |
 | --- | --- |
-| `Select(Func<Countries, string> predicate, object parameters)` | `SELECT {e.Star} FROM {e}`, plus a `WHERE` when the predicate returns a non-empty string. Calls `.Execute<CountriesRow>()`. |
-| `Insert(row, InsertOptions)` | Builds an `InsertModel`, runs it, and — when asked — re-reads the row and copies every field back onto the object you passed in. |
-| `Insert(List<row>, InsertOptions)` | One multi-row `INSERT` with `@p1, @p2, …` parameters. With `LoadRecord` it falls back to looping single inserts, because the reload is per-row. |
-| `Update(row, bool reload)` | `SET` every non-key column, `WHERE {e.Id} = @Key`. With `reload`, re-reads by key and copies the result back. |
-| `Update(List<row>, bool reload)` | Chunks the list and delegates to `UpdateBatch`. With `reload`, re-reads all keys in one `IN (…)` query and matches results back by key. |
-| `Delete(row)` | `ctx.DeleteById<Countries, long>(row.Key)`. |
-| `Delete(List<row>)` | `ctx.DeleteByIds<Countries, long>(rows.Select(r => r.Key))`. |
-| `UpdateBatch(rows, offset, count)` | Private helper holding the dialect's set-based update SQL for one chunk. |
+| `SelectAsync(Func<Countries, string> predicate, object parameters, CancellationToken ct)` | `SELECT {e.Star} FROM {e}`, plus a `WHERE` when the predicate returns a non-empty string. Calls `.ExecuteAsync<CountriesRow>(ct)`. |
+| `InsertAsync(row, InsertOptions, CancellationToken ct)` | Builds an `InsertModel`, runs it, and — when asked — re-reads the row and copies every field back onto the object you passed in. |
+| `InsertAsync(List<row>, InsertOptions, CancellationToken ct)` | One multi-row `INSERT` with `@p1, @p2, …` parameters. With `LoadRecord` it falls back to looping single inserts, because the reload is per-row. |
+| `UpdateAsync(row, bool reload, CancellationToken ct)` | `SET` every non-key column, `WHERE {e.Id} = @Key`. With `reload`, re-reads by key and copies the result back. |
+| `UpdateAsync(List<row>, bool reload, CancellationToken ct)` | Chunks the list and delegates to `UpdateBatchAsync`. With `reload`, re-reads all keys in one `IN (…)` query and matches results back by key. |
+| `DeleteAsync(row, CancellationToken ct)` | `ctx.DeleteByIdAsync<Countries, long>(row.Key, ct)`. |
+| `DeleteAsync(List<row>, CancellationToken ct)` | `ctx.DeleteByIdsAsync<Countries, long>(rows.Select(r => r.Key), ct)`. |
+| `UpdateBatchAsync(rows, offset, count, reload, ct)` | Private helper holding the dialect's set-based update SQL for one chunk. |
 
 **Inherited from `DbEntity<Row, Structure, Pk>`** — these are not generated, you get them from the core package:
 
 | Member | What it does |
 | --- | --- |
-| `All()` | `Select(t => "")` — the whole table. |
+| `AllAsync(CancellationToken ct)` | `SelectAsync(t => "", null, ct)` — the whole table. Override it when the table needs a dedicated query for the "all rows" case. |
+| `All()` | `AllAsync()` — the whole table. Blocks on the asynchronous call. |
 | `Store(row)` | Insert if `Key` is null or default, otherwise update. Returns the affected count. |
 | `Store(List<row>)` | Splits the list on `Key` and does both, summing the results. |
 
-**`InsertOptions` controls what `Insert` does:**
+**`InsertOptions` controls what `InsertAsync` does:**
 
 | Value | Flag combination | Behaviour |
 | --- | --- | --- |
@@ -310,9 +315,9 @@ public partial class CountriesEntity : DbEntity<CountriesRow, Countries, long>
 | `oracle` | `RETURNING *` on the `INSERT`/`UPDATE` itself. |
 | `mysql` | A second `SELECT … WHERE {t.Id} = LAST_INSERT_ID()`. |
 
-MySQL is the outlier because it has no `RETURNING` equivalent — so a MySQL `Insert(..., LoadRecord)` is **two** round trips, not one.
+MySQL is the outlier because it has no `RETURNING` equivalent — so a MySQL `InsertAsync(..., LoadRecord)` is **two** round trips, not one.
 
-**Batching.** `Update(List<row>)` reads `ctx.Config.MaxParametersPerStatement` (default `60_000`) and divides by the number of parameters per row to get a chunk size, so a 50,000-row update never exceeds the provider's parameter limit:
+**Batching.** `UpdateAsync(List<row>)` reads `ctx.Config.MaxParametersPerStatement` (default `60_000`) and divides by the number of parameters per row to get a chunk size, so a 50,000-row update never exceeds the provider's parameter limit:
 
 ```csharp
 var parametersPerStatement = ctx.Config?.MaxParametersPerStatement ?? 60_000;

@@ -53,6 +53,8 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine("using System.Collections.Generic;");
         builder.AppendLine("using System.Data.Common;");
         builder.AppendLine("using System.Linq;");
+        builder.AppendLine("using System.Threading;");
+        builder.AppendLine("using System.Threading.Tasks;");
         builder.AppendLine("using SqlNative;");
         builder.AppendLine();
         builder.AppendLine($"namespace {packageNamespace};");
@@ -275,25 +277,25 @@ internal sealed class MySqlModelWriter : IModelWriter
     {
         var hasPrimaryKey = primaryKey is not null;
 
-        builder.AppendLine($"    public override int Delete({rowClassName} row)");
+        builder.AppendLine($"    public override Task<int> DeleteAsync({rowClassName} row, CancellationToken ct = default)");
         builder.AppendLine("    {");
         builder.AppendLine(hasPrimaryKey
-            ? $"        return ctx.DeleteById<{className}, {keyType}>(row.Key);"
+            ? $"        return ctx.DeleteByIdAsync<{className}, {keyType}>(row.Key, ct);"
             : "        throw new NotImplementedException();");
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Delete(List<{rowClassName}> rows)");
+        builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (hasPrimaryKey)
         {
             builder.AppendLine("        if (rows == null || rows.Count == 0)");
             builder.AppendLine("        {");
-            builder.AppendLine("            return 0;");
+            builder.AppendLine("            return Task.FromResult(0);");
             builder.AppendLine("        }");
             builder.AppendLine();
             builder.AppendLine(
-                $"        return ctx.DeleteByIds<{className}, {keyType}>(rows.Select(item => item.Key));");
+                $"        return ctx.DeleteByIdsAsync<{className}, {keyType}>(rows.Select(item => item.Key), ct);");
         }
         else
         {
@@ -317,7 +319,7 @@ internal sealed class MySqlModelWriter : IModelWriter
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
 
-        builder.AppendLine($"    public override int Insert({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey)");
+        builder.AppendLine($"    public override async Task<int> InsertAsync({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (columns.Count == 0)
         {
@@ -348,14 +350,14 @@ internal sealed class MySqlModelWriter : IModelWriter
                 builder.AppendLine("        }");
                 builder.AppendLine();
             }
-            builder.AppendLine($"        var affected = ctx.Insert<{className}>(e => new InsertModel");
+            builder.AppendLine($"        var affected = await ctx.InsertAsync<{className}>(e => new InsertModel");
             builder.AppendLine("        {");
             builder.AppendLine($"            Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
             builder.AppendLine($"            Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
             builder.AppendLine("            Parameters = skipPrimaryKey");
             builder.AppendLine($"                ? (object)new {{ {withoutPkParameters} }}");
             builder.AppendLine($"                : new {{ {allParameters} }}");
-            builder.AppendLine("        }).ExecuteNonQuery();");
+            builder.AppendLine("        }, ct).ConfigureAwait(false);");
             builder.AppendLine();
 
             if (hasPrimaryKey)
@@ -366,11 +368,11 @@ internal sealed class MySqlModelWriter : IModelWriter
                 builder.AppendLine("        {");
                 if (pkIsAutoIncrement)
                 {
-                    builder.AppendLine($"            var loaded = Select(t => $\"{{t.{pkStructure}}} = LAST_INSERT_ID()\", null);");
+                    builder.AppendLine($"            var loaded = await SelectAsync(t => $\"{{t.{pkStructure}}} = LAST_INSERT_ID()\", null, ct).ConfigureAwait(false);");
                 }
                 else
                 {
-                    builder.AppendLine($"            var loaded = Select(t => $\"{{t.{pkStructure}}} = @Key\", new {{ Key = row.Key }});");
+                    builder.AppendLine($"            var loaded = await SelectAsync(t => $\"{{t.{pkStructure}}} = @Key\", new {{ Key = row.Key }}, ct).ConfigureAwait(false);");
                 }
                 builder.AppendLine("            if (loaded.Count > 0)");
                 builder.AppendLine("            {");
@@ -387,7 +389,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Insert(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey)");
+        builder.AppendLine($"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (columns.Count == 0)
         {
@@ -416,7 +418,7 @@ internal sealed class MySqlModelWriter : IModelWriter
             builder.AppendLine("            var count = 0;");
             builder.AppendLine("            foreach (var item in rows)");
             builder.AppendLine("            {");
-            builder.AppendLine("                this.Insert(item, options);");
+            builder.AppendLine("                await this.InsertAsync(item, options, ct).ConfigureAwait(false);");
             builder.AppendLine("                count++;");
             builder.AppendLine("            }");
             builder.AppendLine("            return count;");
@@ -467,13 +469,13 @@ internal sealed class MySqlModelWriter : IModelWriter
             var allColumnsLambdaExpr = string.Join(", ", allColumns.Select(c => "{e." + c.StructureName + "}"));
             var withoutPkColumnsLambdaExpr = string.Join(", ", columnsWithoutPk.Select(c => "{e." + c.StructureName + "}"));
 
-            builder.AppendLine($"        return ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine($"        return await ctx.BuildQuery<{className}>((q, e) => q");
             builder.AppendLine("            .Config(() => e.DisableAlias = true)");
             builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
             builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
             builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
             builder.AppendLine("            .SetParameters(parameters)");
-            builder.AppendLine("            ).ExecuteNonQuery();");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         }
 
         builder.AppendLine("    }");
@@ -484,7 +486,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         string className,
         string rowClassName)
     {
-        builder.AppendLine($"    public override List<{rowClassName}> Select(Func<{className}, string> predicate, object parameters)");
+        builder.AppendLine($"    public override Task<List<{rowClassName}>> SelectAsync(Func<{className}, string> predicate, object parameters = null, CancellationToken ct = default)");
         builder.AppendLine("    {");
         builder.AppendLine("        var condition = \"\";");
         builder.AppendLine();
@@ -495,7 +497,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine("            .AppendIf(!string.IsNullOrWhiteSpace(condition), $\"WHERE {condition}\")");
         builder.AppendLine("            )");
         builder.AppendLine("            .SetParameters(parameters)");
-        builder.AppendLine($"            .Execute<{rowClassName}>();");
+        builder.AppendLine($"            .ExecuteAsync<{rowClassName}>(ct);");
         builder.AppendLine("    }");
     }
 
@@ -510,7 +512,7 @@ internal sealed class MySqlModelWriter : IModelWriter
     {
         var canUpdate = primaryKey is not null && updateColumns.Count > 0;
 
-        builder.AppendLine($"    public override int Update({rowClassName} row, bool reload = false)");
+        builder.AppendLine($"    public override async Task<int> UpdateAsync({rowClassName} row, bool reload = false, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
@@ -527,16 +529,16 @@ internal sealed class MySqlModelWriter : IModelWriter
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine($"        var affected = ctx.Update<{className}>(e => new UpdateModel");
+            builder.AppendLine($"        var affected = await ctx.UpdateAsync<{className}>(e => new UpdateModel");
             builder.AppendLine("        {");
             builder.AppendLine("            Set = $\"" + set + "\",");
             builder.AppendLine($"            Where = $\"{{e.{pkStructure}}} = @Key\",");
             builder.AppendLine($"            Parameters = new {{ {parameters}, Key = row.Key }}");
-            builder.AppendLine("        }).ExecuteNonQuery();");
+            builder.AppendLine("        }, ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine("        if (reload)");
             builder.AppendLine("        {");
-            builder.AppendLine($"            var loaded = Select(t => $\"{{t.{pkStructure}}} = @Key\", new {{ Key = row.Key }});");
+            builder.AppendLine($"            var loaded = await SelectAsync(t => $\"{{t.{pkStructure}}} = @Key\", new {{ Key = row.Key }}, ct).ConfigureAwait(false);");
             builder.AppendLine("            if (loaded.Count > 0)");
             builder.AppendLine("            {");
             builder.AppendLine("                var source = loaded[0];");
@@ -550,7 +552,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Update(List<{rowClassName}> rows, bool reload = false)");
+        builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, bool reload = false, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
@@ -574,7 +576,7 @@ internal sealed class MySqlModelWriter : IModelWriter
             builder.AppendLine("        var affected = 0;");
             builder.AppendLine("        for (var offset = 0; offset < rows.Count; offset += batchSize)");
             builder.AppendLine("        {");
-            builder.AppendLine("            affected += UpdateBatch(rows, offset, Math.Min(batchSize, rows.Count - offset));");
+            builder.AppendLine("            affected += await UpdateBatchAsync(rows, offset, Math.Min(batchSize, rows.Count - offset), ct).ConfigureAwait(false);");
             builder.AppendLine("        }");
             builder.AppendLine();
 
@@ -590,12 +592,12 @@ internal sealed class MySqlModelWriter : IModelWriter
             builder.AppendLine("                reloadParts.Add(p);");
             builder.AppendLine("            }");
             builder.AppendLine();
-            builder.AppendLine($"            var loaded = ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine($"            var loaded = await ctx.BuildQuery<{className}>((q, e) => q");
             builder.AppendLine("                .Append($\"SELECT {e.Star}\")");
             builder.AppendLine("                .Append($\"FROM {e}\")");
             builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} IN (\" + string.Join(\", \", reloadParts) + \")\")");
             builder.AppendLine("                .SetParameters(reloadParameters)");
-            builder.AppendLine($"            ).Execute<{rowClassName}>();");
+            builder.AppendLine($"            ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine($"            var byKey = new Dictionary<{keyType}, {rowClassName}>(rows.Count);");
             builder.AppendLine("            foreach (var src in loaded)");
@@ -663,7 +665,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         var t2ColumnsList = string.Join(", ", sourceColumns.Select(c => helper.WrapObjectName(c.Column.Name)));
         var onClause = "{e." + primaryKey.StructureName + "} = t2." + helper.WrapObjectName(primaryKey.Column.Name);
 
-        builder.AppendLine($"    private int UpdateBatch(List<{rowClassName}> rows, int offset, int count)");
+        builder.AppendLine($"    private async Task<int> UpdateBatchAsync(List<{rowClassName}> rows, int offset, int count, CancellationToken ct)");
         builder.AppendLine("    {");
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var tuples = new List<string>();");
@@ -690,13 +692,13 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine();
         builder.AppendLine("        var valuesClause = string.Join(\", \", tuples);");
         builder.AppendLine();
-        builder.AppendLine($"        return ctx.BuildQuery<{className}>((q, e) => q");
+        builder.AppendLine($"        return await ctx.BuildQuery<{className}>((q, e) => q");
         builder.AppendLine("            .Config(() => e.Alias = \"t1\")");
         builder.AppendLine("            .Append($\"UPDATE {e}\")");
         builder.AppendLine($"            .Append($\"INNER JOIN (VALUES \" + valuesClause + $\") AS t2({t2ColumnsList}) ON " + onClause + "\")");
         builder.AppendLine("            .Append($\"SET " + string.Join(", ", setParts) + "\")");
         builder.AppendLine("            .SetParameters(parameters)");
-        builder.AppendLine("            ).ExecuteNonQuery();");
+        builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         builder.AppendLine("    }");
     }
 

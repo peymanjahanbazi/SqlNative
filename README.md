@@ -356,7 +356,7 @@ var affected = ctx.Insert<City>(c => new InsertModel
     Columns = $"{c.Name}, {c.CountryCode}, {c.District}, {c.Population}",
     Values  = "@Name, @CountryCode, @District, @Population",
     Parameters = new { Name = "Springfield", CountryCode = "USA", District = "Illinois", Population = 116000 }
-}).ExecuteNonQuery();
+});
 ```
 
 ```sql
@@ -403,7 +403,7 @@ ctx.Update<City>(c => new UpdateModel
     Set        = $"{c.Population} = @Population",
     Where      = $"{c.Id} = @Id",
     Parameters = new { Population = 120000, Id = 3793 }
-}).ExecuteNonQuery();
+});
 ```
 
 ---
@@ -583,9 +583,36 @@ var rows = q.Execute<CityRow>();
 | `Execute<T>()` | Run and map to `List<T>`. |
 | `ExecuteScalar()` | Run and return the first column of the first row. |
 | `ExecuteNonQuery()` | Run and return the affected row count. |
+| `ExecuteAsync<T>(ct)` | Awaitable `Execute<T>()`. |
+| `ExecuteScalarAsync(ct)` | Awaitable `ExecuteScalar()`. |
+| `ExecuteNonQueryAsync(ct)` | Awaitable `ExecuteNonQuery()`. |
 | `Config(Action)` | Change the table structure before the SQL is built. |
 | `Model<T>(className)` | Write a row class for this result set. |
 | `Sql` | The generated SQL, without executing it. |
+
+### Async
+
+Every execution method has an `Async` counterpart that takes an optional `CancellationToken`:
+
+```csharp
+var rows = await ctx.Select<City>(c => new SelectModel { From = c, Select = $"{c.Star}" })
+                     .ExecuteAsync<CityRow>(ct);
+
+var affected = await ctx.InsertAsync<City>(c => new InsertModel { /* ... */ }, ct);
+var updated  = await ctx.UpdateAsync<City>(c => new UpdateModel { /* ... */ }, ct);
+```
+
+The async methods use the provider's real async I/O (`ExecuteReaderAsync`, `ReadAsync`,
+`ExecuteScalarAsync`, `ExecuteNonQueryAsync`), so the calling thread is released while the
+database works. The synchronous methods delegate to the async ones, so both paths run the
+same code.
+
+The delete helpers and the `DbEntity` members have async counterparts as well:
+
+```csharp
+await ctx.DeleteByIdsAsync<City, int>([12, 13, 14], ct);
+await entity.SelectAsync(c => $"{c.Population} > 1000000", ct: ct);
+```
 
 ### How parameters are handled
 
@@ -673,6 +700,7 @@ The command is written at `Information` level with the SQL as the `Sql` property
 | `Select` / `Insert` / `Update` / `Delete` | Yes — each returns a `Query` you can inspect before it runs |
 | Per-table CRUD (`ctx.City.Insert(row)`) | Yes — via `DbEntity<T>` |
 | Code generation from a live schema | Yes |
+| Async query execution | Yes — `ExecuteAsync`, `ExecuteScalarAsync`, `ExecuteNonQueryAsync` |
 | Change tracking | No — `Store(row)` decides insert vs. update by looking at the key |
 | Lazy loading / proxies | No |
 | Migrations | No — you write the DDL |

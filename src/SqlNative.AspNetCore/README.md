@@ -156,6 +156,19 @@ app.MapGet("/countries/{id}", (int id, FpprodContext ctx) =>
     .FirstOrDefault());
 ```
 
+On a web app, prefer the async overloads — they use the provider's real async I/O, so the
+request thread is released while the database works:
+
+```csharp
+app.MapGet("/countries", async (FpprodContext ctx, CancellationToken ct) =>
+{
+    return await ctx.BuildQuery<Countries>((q, c) => q
+        .Append($"SELECT {c.Id}, {c.Name}, {c.Iso3}")
+        .Append($"FROM {c}"))
+        .ExecuteAsync<Countrybrief>(ct);
+});
+```
+
 ---
 
 ## Reusing a connection you don't own
@@ -182,7 +195,6 @@ This package is deliberately small. Not implemented yet:
 
 - **Connection pooling.** `ConnectionCreatePolicy` (`ConnectionPerContext` / `ConnectionPool`) is declared but `internal`, and the corresponding properties are commented out in `SqlNativeOptions`. Every scoped context opens its own connection; pooling is left to the provider.
 - **A bare `AddSqlNative()`** for when you only want the core services — the method is written but commented out.
-- **Async query execution.** `Execute<T>()` is synchronous, and this package doesn't change that.
 - **Health checks, interceptors and logging hooks.** Executed SQL commands are written to the host's `ILogger`; health checks and command interceptors are not wired up.
 
 ---

@@ -194,7 +194,27 @@ var rows = q.Execute<EmpRow>();
 | `Execute<T>()` | Run and map to `List<T>`. |
 | `ExecuteScalar()` | Run and return the first column of the first row. |
 | `ExecuteNonQuery()` | Run and return the affected row count. |
+| `ExecuteAsync<T>(ct)` | Awaitable `Execute<T>()`. |
+| `ExecuteScalarAsync(ct)` | Awaitable `ExecuteScalar()`. |
+| `ExecuteNonQueryAsync(ct)` | Awaitable `ExecuteNonQuery()`. |
 | `Sql` | The generated SQL, without executing it. |
+
+### Async
+
+Every execution method has an `Async` counterpart that takes an optional `CancellationToken`:
+
+```csharp
+var rows = await ctx.Select<DboEmp>(e => new SelectModel { From = e, Select = e.Star })
+                     .ExecuteAsync<EmpRow>(ct);
+
+var affected = await ctx.InsertAsync<DboEmp>(e => new InsertModel { /* ... */ }, ct);
+var updated  = await ctx.UpdateAsync<DboEmp>(e => new UpdateModel { /* ... */ }, ct);
+```
+
+The async methods use the provider's real async I/O (`ExecuteReaderAsync`, `ReadAsync`,
+`ExecuteScalarAsync`, `ExecuteNonQueryAsync`), so the calling thread is released while the
+database works. The synchronous methods delegate to the async ones, so both paths run the
+same code.
 
 ---
 
@@ -228,8 +248,11 @@ var affected = ctx.Insert<DboEmp>(e => new InsertModel
     Columns = e.Firstname + e.Lastname + e.Deptid,
     Values  = "@Firstname, @Lastname, @Deptid",
     Parameters = new { Firstname = "Ada", Lastname = "Lovelace", Deptid = 4 }
-}).ExecuteNonQuery();
+});
 ```
+
+The insert executes immediately and returns the affected count. Use `InsertAsync` to await it
+with a `CancellationToken`.
 
 Append `OUTPUT INSERTED.*` (or `RETURNING *`) to read the row back.
 
@@ -241,8 +264,11 @@ ctx.Update<DboEmp>(e => new UpdateModel
     Set        = $"{e.Lastname} = @lastname",
     Where      = $"{e.Id} = @id",
     Parameters = new { lastname = "Byron", id = 12 }
-}).ExecuteNonQuery();
+});
 ```
+
+Like `Insert`, it executes immediately and returns the affected count; `UpdateAsync` is the
+awaitable counterpart.
 
 ### Delete
 
@@ -253,6 +279,15 @@ ctx.DeleteWhere<DboEmp>(e => $"{e.Deptid} = @deptid", new { deptid = 4 });
 ctx.DeleteById<DboEmp, long>(12);
 ctx.DeleteByIds<DboEmp, long>([12, 13, 14]);   // batched by MaxParametersPerStatement
 ctx.DeleteAll<DboEmp>();
+```
+
+Each helper also has an awaitable counterpart:
+
+```csharp
+await ctx.DeleteWhereAsync<DboEmp>(e => $"{e.Deptid} = @deptid", new { deptid = 4 }, ct);
+await ctx.DeleteByIdAsync<DboEmp, long>(12, ct);
+await ctx.DeleteByIdsAsync<DboEmp, long>([12, 13, 14], ct);   // each batch is a separate await
+await ctx.DeleteAllAsync<DboEmp>(ct);
 ```
 
 ### Arbitrary SQL
@@ -470,7 +505,7 @@ The core `SqlFunctions` class currently exposes `SqlFunctions.NULL`; the per-eng
 
 Worth knowing before you build on this:
 
-- **Query execution is synchronous.** `Execute`, `ExecuteScalar` and `ExecuteNonQuery` are the only entry points; the async surface covers connection disposal only.
+- **Query execution is synchronous or asynchronous — your choice.** `Execute`, `ExecuteScalar` and `ExecuteNonQuery` have `Async` counterparts (`ExecuteAsync`, `ExecuteScalarAsync`, `ExecuteNonQueryAsync`) that take a `CancellationToken` and use the provider's real async I/O. The synchronous methods delegate to them, so both paths share one implementation. The delete helpers and the `DbEntity` members have async counterparts too.
 - **Every executed command is written to the console.** `Query.CreateCommand` calls `Console.WriteLine(command.CommandText)` unconditionally. This is exactly what `IsDevelopMode` is meant to gate, and it is not yet wired up — until it is, plan for that output in production.
 - **`Limit` / `Offset` are emitted verbatim** as `LIMIT` / `OFFSET`, which is MySQL and PostgreSQL syntax but not SQL Server's (`OFFSET … ROWS FETCH NEXT … ROWS ONLY`). Use `Append` if you need the other spelling.
 - **Inlined parameters are not escaped.** See [How parameters are handled](#how-parameters-are-handled).

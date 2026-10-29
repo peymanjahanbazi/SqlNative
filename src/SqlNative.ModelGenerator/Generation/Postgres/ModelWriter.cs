@@ -55,6 +55,8 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine("using System.Collections.Generic;");
         builder.AppendLine("using System.Data.Common;");
         builder.AppendLine("using System.Linq;");
+        builder.AppendLine("using System.Threading;");
+        builder.AppendLine("using System.Threading.Tasks;");
         builder.AppendLine("using SqlNative;");
         builder.AppendLine();
         builder.AppendLine($"namespace {packageNamespace};");
@@ -281,25 +283,25 @@ internal sealed class PostgresModelWriter : IModelWriter
     {
         var hasPrimaryKey = primaryKey is not null;
 
-        builder.AppendLine($"    public override int Delete({rowClassName} row)");
+        builder.AppendLine($"    public override Task<int> DeleteAsync({rowClassName} row, CancellationToken ct = default)");
         builder.AppendLine("    {");
         builder.AppendLine(hasPrimaryKey
-            ? $"        return ctx.DeleteById<{className}, {keyType}>(row.Key);"
+            ? $"        return ctx.DeleteByIdAsync<{className}, {keyType}>(row.Key, ct);"
             : "        throw new NotImplementedException();");
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Delete(List<{rowClassName}> rows)");
+        builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (hasPrimaryKey)
         {
             builder.AppendLine("        if (rows == null || rows.Count == 0)");
             builder.AppendLine("        {");
-            builder.AppendLine("            return 0;");
+            builder.AppendLine("            return Task.FromResult(0);");
             builder.AppendLine("        }");
             builder.AppendLine();
             builder.AppendLine(
-                $"        return ctx.DeleteByIds<{className}, {keyType}>(rows.Select(item => item.Key));");
+                $"        return ctx.DeleteByIdsAsync<{className}, {keyType}>(rows.Select(item => item.Key), ct);");
         }
         else
         {
@@ -323,7 +325,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
 
-        builder.AppendLine($"    public override int Insert({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey)");
+        builder.AppendLine($"    public override async Task<int> InsertAsync({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (columns.Count == 0)
         {
@@ -358,14 +360,16 @@ internal sealed class PostgresModelWriter : IModelWriter
             {
                 builder.AppendLine("        if (loadRecord)");
                 builder.AppendLine("        {");
-                builder.AppendLine($"            var loaded = ctx.Insert<{className}>(e => new InsertModel");
-                builder.AppendLine("            {");
-                builder.AppendLine($"                Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
-                builder.AppendLine($"                Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
-                builder.AppendLine("                Parameters = skipPrimaryKey");
+                builder.AppendLine($"            var loaded = await ctx.BuildQuery<{className}>((q, e) => q");
+                builder.AppendLine("                .Config(() => e.DisableAlias = true)");
+                builder.AppendLine("                .Append($\"INSERT INTO {e}\")");
+                builder.AppendLine($"                .Append($\"({{(skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr})}})\")");
+                builder.AppendLine("                .Append(\"RETURNING *\")");
+                builder.AppendLine($"                .Append(\"VALUES ( {{(skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\")}} )\")");
+                builder.AppendLine("                .SetParameters(skipPrimaryKey");
                 builder.AppendLine($"                    ? (object)new {{ {withoutPkParameters} }}");
-                builder.AppendLine($"                    : new {{ {allParameters} }}");
-                builder.AppendLine("            }).Append(\"RETURNING *\").Execute<" + rowClassName + ">();");
+                builder.AppendLine($"                    : new {{ {allParameters} }})");
+                builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                 builder.AppendLine();
                 builder.AppendLine("            if (loaded.Count > 0)");
                 builder.AppendLine("            {");
@@ -377,14 +381,14 @@ internal sealed class PostgresModelWriter : IModelWriter
                 builder.AppendLine("        }");
                 builder.AppendLine();
             }
-            builder.AppendLine($"        var affected = ctx.Insert<{className}>(e => new InsertModel");
+            builder.AppendLine($"        var affected = await ctx.InsertAsync<{className}>(e => new InsertModel");
             builder.AppendLine("        {");
             builder.AppendLine($"            Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
             builder.AppendLine($"            Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
             builder.AppendLine("            Parameters = skipPrimaryKey");
             builder.AppendLine($"                ? (object)new {{ {withoutPkParameters} }}");
             builder.AppendLine($"                : new {{ {allParameters} }}");
-            builder.AppendLine("        }).ExecuteNonQuery();");
+            builder.AppendLine("        }, ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine("        return affected;");
         }
@@ -392,7 +396,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Insert(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey)");
+        builder.AppendLine($"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (columns.Count == 0)
         {
@@ -465,14 +469,14 @@ internal sealed class PostgresModelWriter : IModelWriter
             {
                 builder.AppendLine("        if (loadRecord)");
                 builder.AppendLine("        {");
-                builder.AppendLine($"            var loaded = ctx.BuildQuery<{className}>((q, e) => q");
+                builder.AppendLine($"            var loaded = await ctx.BuildQuery<{className}>((q, e) => q");
                 builder.AppendLine("                .Config(() => e.DisableAlias = true)");
                 builder.AppendLine("                .Append($\"INSERT INTO {e}\")");
                 builder.AppendLine($"                .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
                 builder.AppendLine("                .Append(\"VALUES \" + string.Join(\", \", tuples))");
                 builder.AppendLine("                .Append(\"RETURNING *\")");
                 builder.AppendLine("                .SetParameters(parameters)");
-                builder.AppendLine("                ).Execute<" + rowClassName + ">();");
+                builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                 builder.AppendLine();
                 builder.AppendLine("            for (var i = 0; i < rows.Count && i < loaded.Count; i++)");
                 builder.AppendLine("            {");
@@ -489,13 +493,13 @@ internal sealed class PostgresModelWriter : IModelWriter
                 builder.AppendLine();
             }
 
-            builder.AppendLine($"        return ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine($"        return await ctx.BuildQuery<{className}>((q, e) => q");
             builder.AppendLine("            .Config(() => e.DisableAlias = true)");
             builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
             builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
             builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
             builder.AppendLine("            .SetParameters(parameters)");
-            builder.AppendLine("            ).ExecuteNonQuery();");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         }
 
         builder.AppendLine("    }");
@@ -506,7 +510,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         string className,
         string rowClassName)
     {
-        builder.AppendLine($"    public override List<{rowClassName}> Select(Func<{className}, string> predicate, object parameters)");
+        builder.AppendLine($"    public override Task<List<{rowClassName}>> SelectAsync(Func<{className}, string> predicate, object parameters = null, CancellationToken ct = default)");
         builder.AppendLine("    {");
         builder.AppendLine("        var condition = \"\";");
         builder.AppendLine();
@@ -517,7 +521,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine("            .AppendIf(!string.IsNullOrWhiteSpace(condition), $\"WHERE {condition}\")");
         builder.AppendLine("            )");
         builder.AppendLine("            .SetParameters(parameters)");
-        builder.AppendLine($"            .Execute<{rowClassName}>();");
+        builder.AppendLine($"            .ExecuteAsync<{rowClassName}>(ct);");
         builder.AppendLine("    }");
     }
 
@@ -531,7 +535,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         IReadOnlyList<ColumnModel> columns)
     {
         var canUpdate = primaryKey is not null && updateColumns.Count > 0;
-        builder.AppendLine($"    public override int Update({rowClassName} row, bool reload = false)");
+        builder.AppendLine($"    public override async Task<int> UpdateAsync({rowClassName} row, bool reload = false, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
@@ -550,12 +554,14 @@ internal sealed class PostgresModelWriter : IModelWriter
             builder.AppendLine();
             builder.AppendLine("        if (reload)");
             builder.AppendLine("        {");
-            builder.AppendLine($"            var loaded = ctx.Update<{className}>(e => new UpdateModel");
-            builder.AppendLine("            {");
-            builder.AppendLine("                Set = $\"" + set + "\",");
-            builder.AppendLine($"                Where = $\"{{e.{pkStructure}}} = @Key\",");
-            builder.AppendLine($"                Parameters = new {{ {parameters}, Key = row.Key }}");
-            builder.AppendLine("            }).Append(\"RETURNING *\").Execute<" + rowClassName + ">();");
+            builder.AppendLine($"            var loaded = await ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine("                .Config(() => e.DisableAlias = true)");
+            builder.AppendLine("                .Append($\"UPDATE {e}\")");
+            builder.AppendLine("                .Append($\"SET " + set + "\")");
+            builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} = @Key\")");
+            builder.AppendLine("                .Append(\"RETURNING *\")");
+            builder.AppendLine($"                .SetParameters(new {{ {parameters}, Key = row.Key }})");
+            builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine("            if (loaded.Count > 0)");
             builder.AppendLine("            {");
@@ -566,18 +572,18 @@ internal sealed class PostgresModelWriter : IModelWriter
             builder.AppendLine("            return loaded.Count;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine($"        return ctx.Update<{className}>(e => new UpdateModel");
+            builder.AppendLine($"        return await ctx.UpdateAsync<{className}>(e => new UpdateModel");
             builder.AppendLine("        {");
             builder.AppendLine("            Set = $\"" + set + "\",");
             builder.AppendLine($"            Where = $\"{{e.{pkStructure}}} = @Key\",");
             builder.AppendLine($"            Parameters = new {{ {parameters}, Key = row.Key }}");
-            builder.AppendLine("        }).ExecuteNonQuery();");
+            builder.AppendLine("        }, ct).ConfigureAwait(false);");
         }
 
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override int Update(List<{rowClassName}> rows, bool reload = false)");
+        builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, bool reload = false, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
@@ -599,7 +605,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             builder.AppendLine("        var affected = 0;");
             builder.AppendLine("        for (var offset = 0; offset < rows.Count; offset += batchSize)");
             builder.AppendLine("        {");
-            builder.AppendLine("            affected += UpdateBatch(rows, offset, Math.Min(batchSize, rows.Count - offset), reload);");
+            builder.AppendLine("            affected += await UpdateBatchAsync(rows, offset, Math.Min(batchSize, rows.Count - offset), reload, ct).ConfigureAwait(false);");
             builder.AppendLine("        }");
             builder.AppendLine();
             builder.AppendLine("        return affected;");
@@ -662,7 +668,7 @@ internal sealed class PostgresModelWriter : IModelWriter
 
         var onClause = "{" + "e." + primaryKey.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(primaryKey.Column.Name, helper));
 
-        builder.AppendLine($"    private int UpdateBatch(List<{rowClassName}> rows, int offset, int count, bool reload)");
+        builder.AppendLine($"    private async Task<int> UpdateBatchAsync(List<{rowClassName}> rows, int offset, int count, bool reload, CancellationToken ct)");
         builder.AppendLine("    {");
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var selects = new List<string>();");
@@ -699,7 +705,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine();
         builder.AppendLine("        if (reload)");
         builder.AppendLine("        {");
-        builder.AppendLine("            var loaded = query.Append(\"RETURNING *\").Execute<" + rowClassName + ">();");
+        builder.AppendLine("            var loaded = await query.Append(\"RETURNING *\").ExecuteAsync<" + rowClassName + ">(ct).ConfigureAwait(false);");
         builder.AppendLine("            for (var i = 0; i < count && i < loaded.Count; i++)");
         builder.AppendLine("            {");
         builder.AppendLine("                var source2 = loaded[i];");
@@ -709,7 +715,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine("            return loaded.Count;");
         builder.AppendLine("        }");
         builder.AppendLine();
-        builder.AppendLine("        return query.ExecuteNonQuery();");
+        builder.AppendLine("        return await query.ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         builder.AppendLine("    }");
     }
 

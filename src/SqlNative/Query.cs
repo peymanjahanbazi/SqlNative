@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SqlNative;
 
@@ -128,8 +130,16 @@ public class Query
     /// <returns>The scalar result, or <see langword="null"/> when no value is returned.</returns>
     public object ExecuteScalar()
     {
+        return ExecuteScalarAsync().GetAwaiter().GetResult();
+    }
+
+    /// <summary>Executes the query asynchronously and returns the first value of the first row.</summary>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>The scalar result, or <see langword="null"/> when no value is returned.</returns>
+    public async Task<object> ExecuteScalarAsync(CancellationToken ct = default)
+    {
         using var command = CreateCommand();
-        var result = command.ExecuteScalar();
+        var result = await command.ExecuteScalarAsync(ct).ConfigureAwait(false);
         return result;
     }
 
@@ -137,8 +147,16 @@ public class Query
     /// <returns>The number of rows affected.</returns>
     public int ExecuteNonQuery()
     {
+        return ExecuteNonQueryAsync().GetAwaiter().GetResult();
+    }
+
+    /// <summary>Executes the query asynchronously as a non-query command.</summary>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>The number of rows affected.</returns>
+    public async Task<int> ExecuteNonQueryAsync(CancellationToken ct = default)
+    {
         using var command = CreateCommand();
-        var result = command.ExecuteNonQuery();
+        var result = await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         return result;
     }
 
@@ -148,9 +166,19 @@ public class Query
     public List<Result> Execute<Result>()
         where Result : new()
     {
+        return ExecuteAsync<Result>().GetAwaiter().GetResult();
+    }
+
+    /// <summary>Executes the query asynchronously and maps the returned rows to result objects.</summary>
+    /// <typeparam name="Result">The result type to create for each row.</typeparam>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>The mapped result rows.</returns>
+    public async Task<List<Result>> ExecuteAsync<Result>(CancellationToken ct = default)
+        where Result : new()
+    {
         using var command = CreateCommand();
 
-        var rows = QueryMapper.MapObject<Result>(command);
+        var rows = await QueryMapper.MapObjectAsync<Result>(command, ct).ConfigureAwait(false);
         return rows;
     }
 

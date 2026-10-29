@@ -6,14 +6,19 @@ namespace SqlNative;
 
 internal class QueryMapper
 {
-    internal static List<Result> MapObject<Result>(DbCommand command) where Result : new()
+    //internal static List<Result> MapObject<Result>(DbCommand command) where Result : new()
+    //{
+    //    return MapObjectAsync<Result>(command, CancellationToken.None).GetAwaiter().GetResult();
+    //}
+
+    internal static async Task<List<Result>> MapObjectAsync<Result>(DbCommand command, CancellationToken ct = default) where Result : new()
     {
         var rows = new List<Result>();
-        using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         if (typeof(QueryResult).IsAssignableFrom(typeof(Result)))
         {
             int[] orders = null;
-            while (reader.Read())
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
             {
                 Result row = new();
                 QueryResult qr = row as QueryResult;
@@ -33,7 +38,7 @@ internal class QueryMapper
             propertyByOrdinal[i] = ResolveProperty(properties, reader.GetName(i), i);
         }
 
-        while (reader.Read())
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
         {
             //object row = Activator.CreateInstance(resultType);
             Result row = new();
