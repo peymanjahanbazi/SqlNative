@@ -380,8 +380,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
                 builder.AppendLine("                .Config(() => e.DisableAlias = true)");
                 builder.AppendLine("                .Append($\"INSERT INTO {e}\")");
                 builder.AppendLine($"                .Append($\"({{(skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr})}})\")");
-                builder.AppendLine("                .Append(\"OUTPUT INSERTED.*\")");
-                builder.AppendLine($"                .Append(\"VALUES ( {{(skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\")}} )\")");
+                builder.AppendLine("                .Append($\"OUTPUT INSERTED.*\")");
+                builder.AppendLine($"                .Append($\"VALUES ( {{(skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\")}} )\")");
                 builder.AppendLine("                .SetParameters(skipPrimaryKey");
                 builder.AppendLine($"                    ? (object)new {{ {withoutPkParameters} }}");
                 builder.AppendLine($"                    : new {{ {allParameters} }})");
