@@ -22,6 +22,10 @@ internal static class OptionParser
         ["ns"] = "package",
         ["context"] = "context",
         ["ctx"] = "context",
+        ["include-tables"] = "include-tables",
+        ["include"] = "include-tables",
+        ["exclude-tables"] = "exclude-tables",
+        ["exclude"] = "exclude-tables",
         ["help"] = "help",
         ["h"] = "help",
         ["?"] = "help",
@@ -29,11 +33,15 @@ internal static class OptionParser
 
     private static readonly HashSet<string> ValuelessOptions = new(StringComparer.OrdinalIgnoreCase) { "help" };
 
+    // Options that may repeat and accumulate values, e.g. --include-tables emp --include-tables dept.
+    private static readonly HashSet<string> RepeatableOptions = new(StringComparer.OrdinalIgnoreCase) { "include-tables", "exclude-tables" };
+
     private static readonly HashSet<string> RequiredOptions = new(StringComparer.Ordinal) { "cs", "engine", "folder", "package" };
 
     public static ParseResult Parse(string[] args)
     {
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var repeatableValues = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -78,7 +86,24 @@ internal static class OptionParser
                 return Fail($"Unknown option '--{key}'. Run with --help to see the available options.");
             }
 
-            values[canonical] = value;
+            if (RepeatableOptions.Contains(canonical))
+            {
+                if (!repeatableValues.TryGetValue(canonical, out var collected))
+                {
+                    collected = new List<string>();
+                    repeatableValues[canonical] = collected;
+                }
+
+                collected.AddRange(SplitTablePatterns(value));
+                if (collected.Count == 0)
+                {
+                    return Fail($"Option '--{key}' has an empty value.");
+                }
+            }
+            else
+            {
+                values[canonical] = value;
+            }
         }
 
         if (values.ContainsKey("help"))
@@ -110,8 +135,22 @@ internal static class OptionParser
                 Folder = values["folder"],
                 Package = values["package"],
                 ContextName = values.TryGetValue("context", out var context) && context.Length > 0 ? context : null,
+                IncludeTables = repeatableValues.TryGetValue("include-tables", out var includeTables)
+                    ? includeTables
+                    : [],
+                ExcludeTables = repeatableValues.TryGetValue("exclude-tables", out var excludeTables)
+                    ? excludeTables
+                    : [],
             });
     }
 
     private static ParseResult Fail(string message) => new(ParseStatus.Error, Error: message);
+
+    private static List<string> SplitTablePatterns(string value)
+    {
+        return value
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => p.Length > 0)
+            .ToList();
+    }
 }

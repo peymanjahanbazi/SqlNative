@@ -28,9 +28,19 @@ internal static class CliRunner
             Console.WriteLine($"Connecting to {engine.Name} database...");
             var schema = await engine.ReadSchemaAsync(options.ConnectionString);
 
+            var tableFilter = TableFilter.FromOptions(options);
+            if (tableFilter.IsActive)
+            {
+                var before = schema.Tables.Count;
+                schema = tableFilter.Apply(schema);
+                Console.WriteLine($"Table filter: {before} table(s) found, {schema.Tables.Count} match(es) after include/exclude.");
+            }
+
             if (schema.Tables.Count == 0)
             {
-                Console.WriteLine("Warning: no tables were found in the database.");
+                Console.WriteLine(tableFilter.IsActive
+                    ? "Warning: no tables match the include/exclude options."
+                    : "Warning: no tables were found in the database.");
             }
 
             var generator = GenerationFactory.Create(options.Engine);

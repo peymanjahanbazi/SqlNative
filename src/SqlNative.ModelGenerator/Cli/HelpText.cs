@@ -18,6 +18,11 @@ internal static class HelpText
           --package     Root namespace of the generated classes.          (aliases: --namespace, --ns)
           --context     Optional name of the generated context class.
                         Defaults to <DatabaseName>Context.                (aliases: --ctx)
+          --include-tables   Only generate models for tables matching these patterns.
+                        Comma separated ("emp,dept") and/or repeated (--include-tables emp --include-tables dept).
+                        '_' matches any sequence of characters ("e_" = tables starting with "e").   (aliases: --include)
+          --exclude-tables   Skip tables matching these patterns. Same syntax as --include-tables.
+                        Applied after --include-tables.                   (aliases: --exclude)
           --help        Prints this help and exits.                       (aliases: --h, --?)
 
         SAMPLES:
@@ -41,6 +46,15 @@ internal static class HelpText
 
           7. Generate models for Oracle Database:
              SqlNative.ModelGenerator --cs "User Id=scott;Password=tiger;Data Source=oracle-host:1521/ORCLPDB1" --engine oracle --folder "./models" --package "Sample.App.Models"
+
+          8. Generate models only for the emp and dept tables:
+             SqlNative.ModelGenerator --cs "..." --engine mssql --folder "./models" --package "Sample.App.Models" --include-tables "emp,dept"
+
+          9. Generate models for every table except emp and dept:
+             SqlNative.ModelGenerator --cs "..." --engine mssql --folder "./models" --package "Sample.App.Models" --exclude-tables emp --exclude-tables dept
+
+         10. Generate models for tables whose name starts with "e" (the '_' wildcard):
+             SqlNative.ModelGenerator --cs "..." --engine mysql --folder "./models" --package "Sample.App.Models" --include-tables "e_"
 
         NOTES:
           - One <TableName>.cs file is generated per database table, plus a <ContextName>.cs file.

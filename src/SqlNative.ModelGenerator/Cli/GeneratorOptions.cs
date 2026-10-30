@@ -20,4 +20,10 @@ internal sealed record GeneratorOptions
     public string Package { get; init; } = string.Empty;
 
     public string? ContextName { get; init; }
+
+    /// <summary>Table name patterns to generate models for. Empty means "all tables".</summary>
+    public IReadOnlyList<string> IncludeTables { get; init; } = [];
+
+    /// <summary>Table name patterns to skip. Applied after <see cref="IncludeTables"/>.</summary>
+    public IReadOnlyList<string> ExcludeTables { get; init; } = [];
 }

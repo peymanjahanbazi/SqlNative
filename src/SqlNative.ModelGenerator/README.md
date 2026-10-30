@@ -115,9 +115,13 @@ sqlnative-gen --cs <connectionString> --engine <mysql|mssql|postgresql|oracle>
 | `--folder` | yes | `--out`, `--output` | Output directory. Created if missing. |
 | `--package` | yes | `--namespace`, `--ns` | Root namespace for every generated class. |
 | `--context` | no | `--ctx` | Name of the context class. Defaults to `<DatabaseName>Context`. |
+| `--include-tables` | no | `--include` | Only generate models for tables matching these patterns. Comma separated and/or repeated: `--include-tables "emp,dept"` or `--include-tables emp --include-tables dept`. |
+| `--exclude-tables` | no | `--exclude` | Skip tables matching these patterns. Same syntax as `--include-tables`, applied after it. |
 | `--help` | no | `--h`, `--?` | Print usage. |
 
 Both `--key value` and `--key=value` syntaxes work. Every option must start with `--`. Engine names are case-insensitive, and `pg`/`postgres`, `sqlserver`/`sql-server` and `ora`/`oradb` normalise to `postgresql`, `mssql` and `oracle`.
+
+Table patterns support the `_` wildcard, which matches any sequence of characters: `e_` matches every table whose name starts with `e`, `_log` matches tables ending in `log`. Matching is case-insensitive and against the plain table name; a `schema.table` pattern matches the schema-qualified name. If both `--include-tables` and `--exclude-tables` are given, the include filter is applied first, then the exclude filter removes matching tables.
 
 Exit codes: `0` success, `1` bad arguments or generation failure, `2` unsupported engine.
 
