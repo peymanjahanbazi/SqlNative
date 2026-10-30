@@ -6,7 +6,7 @@ internal static class HelpText
 {
     public const string Content = """
         SqlNative.ModelGenerator
-        Generates strongly typed table model classes and a context class from an existing database.
+        Generates strongly typed table and view model classes and a context class from an existing database.
 
         USAGE:
           SqlNative.ModelGenerator --cs <connectionString> --engine <mysql|mssql|postgresql|oracle> --folder <path> --package <namespace> [--context <contextName>]
@@ -64,6 +64,8 @@ internal static class HelpText
 
         NOTES:
           - One <TableName>.cs file is generated per database table, plus a <ContextName>.cs file.
+          - For mssql, database views are generated too as read-only models: SelectAsync works,
+            while InsertAsync/UpdateAsync/DeleteAsync throw NotImplementedException.
           - Currently implemented engines: mysql, postgresql, mssql, oracle.
         """;
 }

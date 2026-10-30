@@ -15,28 +15,33 @@ internal sealed class MsSqlEngine : IDatabaseEngine
         var databaseName = ReadDatabaseFromConnectionString(connection.ConnectionString)
             ?? connection.Database;
 
-        var tableEntries = new List<(string Schema, string Name)>();
+        var tableEntries = new List<(string Schema, string Name, bool IsView)>();
         await using (var command = connection.CreateCommand())
         {
             command.CommandText = """
-                SELECT s.name AS schema_name, t.name AS table_name
+                SELECT s.name AS schema_name, t.name AS object_name, 0 AS is_view
                 FROM sys.tables t
                 INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
                 WHERE t.type = 'U'
                   AND t.is_ms_shipped = 0
-                ORDER BY s.name, t.name;
+                UNION ALL
+                SELECT s.name AS schema_name, v.name AS object_name, 1 AS is_view
+                FROM sys.views v
+                INNER JOIN sys.schemas s ON v.schema_id = s.schema_id
+                WHERE v.is_ms_shipped = 0
+                ORDER BY schema_name, object_name;
                 """;
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
-                tableEntries.Add((reader.GetString(0), reader.GetString(1)));
+                tableEntries.Add((reader.GetString(0), reader.GetString(1), reader.GetInt32(2) == 1));
             }
         }
 
         var tables = new List<TableInfo>(tableEntries.Count);
-        foreach (var (schema, tableName) in tableEntries)
+        foreach (var (schema, tableName, isView) in tableEntries)
         {
-            tables.Add(await DescribeTableAsync(connection, schema, tableName, cancellationToken));
+            tables.Add(await DescribeTableAsync(connection, schema, tableName, isView, cancellationToken));
         }
 
         return new DatabaseSchema(databaseName, tables);
@@ -52,30 +57,35 @@ internal sealed class MsSqlEngine : IDatabaseEngine
         SqlConnection connection,
         string schema,
         string tableName,
+        bool isView,
         CancellationToken cancellationToken)
     {
         var columns = new List<ColumnInfo>();
         var primaryKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        await using (var pkCommand = connection.CreateCommand())
+        // Views cannot have primary key constraints, so the lookup is skipped for them.
+        if (!isView)
         {
-            pkCommand.CommandText = """
-                SELECT c.name AS column_name
-                FROM sys.indexes i
-                INNER JOIN sys.index_columns ic
-                    ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-                INNER JOIN sys.columns c
-                    ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-                WHERE i.is_primary_key = 1
-                  AND i.object_id = OBJECT_ID(@fullName);
-                """;
-            var schemaQualified = $"[{schema}].[{tableName}]";
-            AddParameter(pkCommand, "@fullName", schemaQualified);
-
-            await using var pkReader = await pkCommand.ExecuteReaderAsync(cancellationToken);
-            while (await pkReader.ReadAsync(cancellationToken))
+            await using (var pkCommand = connection.CreateCommand())
             {
-                primaryKeys.Add(pkReader.GetString(0));
+                pkCommand.CommandText = """
+                    SELECT c.name AS column_name
+                    FROM sys.indexes i
+                    INNER JOIN sys.index_columns ic
+                        ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+                    INNER JOIN sys.columns c
+                        ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+                    WHERE i.is_primary_key = 1
+                      AND i.object_id = OBJECT_ID(@fullName);
+                    """;
+                var schemaQualified = $"[{schema}].[{tableName}]";
+                AddParameter(pkCommand, "@fullName", schemaQualified);
+
+                await using var pkReader = await pkCommand.ExecuteReaderAsync(cancellationToken);
+                while (await pkReader.ReadAsync(cancellationToken))
+                {
+                    primaryKeys.Add(pkReader.GetString(0));
+                }
             }
         }
 
@@ -113,7 +123,7 @@ internal sealed class MsSqlEngine : IDatabaseEngine
             }
         }
 
-        return new TableInfo(Schema: schema, Name: tableName, Columns: columns);
+        return new TableInfo(Schema: schema, Name: tableName, Columns: columns, IsView: isView);
     }
 
     private static void AddParameter(SqlCommand command, string name, string value)

@@ -7,7 +7,8 @@
     <ToolCommandName>sqlnative-gen</ToolCommandName>
     <Description>Code generator for the SqlNative light-weight ORM. Reads a live SQL Server, MySQL, PostgreSQL or
       Oracle schema and writes a complete typed data-access layer: a table structure class, a row model, a CRUD entity
-      and a context, per table. Installed as the 'sqlnative-gen' dotnet tool.</Description>
+      and a context, per table. For SQL Server, database views are generated too, as read-only models. Installed as
+      the 'sqlnative-gen' dotnet tool.</Description>
     <PackageTags>sql;database;native;orm;codegen;generator</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

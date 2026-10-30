@@ -66,7 +66,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine();
         WriteRow(builder, rowClassName, columns, primaryKey, keyType, helper);
         builder.AppendLine();
-        WriteEntity(builder, className, entityClassName, rowClassName, contextName, columns, primaryKey, keyType, helper);
+        WriteEntity(builder, table, className, entityClassName, rowClassName, contextName, columns, primaryKey, keyType, helper);
 
         return builder.ToString();
     }
@@ -241,6 +241,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
     private static void WriteEntity(
         StringBuilder builder,
+        TableInfo table,
         string className,
         string entityClassName,
         string rowClassName,
@@ -250,6 +251,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
         string keyType,
         IModelIdentifierHelper helper)
     {
+        // Views are treated as read-only: only SELECT is implemented.
+        var isView = table.IsView;
         var updateColumns = columns
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
@@ -266,13 +269,13 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        WriteDelete(builder, className, rowClassName, primaryKey, keyType);
+        WriteDelete(builder, className, rowClassName, primaryKey, keyType, isView);
         builder.AppendLine();
-        WriteInsert(builder, className, rowClassName, primaryKey, columns);
+        WriteInsert(builder, className, rowClassName, primaryKey, columns, isView);
         builder.AppendLine();
         WriteSelect(builder, className, rowClassName);
         builder.AppendLine();
-        WriteUpdate(builder, className, rowClassName, primaryKey, updateColumns, helper, columns);
+        WriteUpdate(builder, className, rowClassName, primaryKey, updateColumns, helper, columns, isView);
 
         builder.AppendLine("}");
     }
@@ -282,15 +285,19 @@ internal sealed class MsSqlModelWriter : IModelWriter
             string className,
             string rowClassName,
             ColumnModel? primaryKey,
-            string keyType)
+            string keyType,
+            bool isView = false)
     {
-        var hasPrimaryKey = primaryKey is not null;
+        var hasPrimaryKey = primaryKey is not null && !isView;
+        var throwMessage = isView
+            ? "throw new NotImplementedException(\"DeleteAsync is not supported: the object is a view and is read-only.\");"
+            : "throw new NotImplementedException();";
 
         builder.AppendLine($"    public override Task<int> DeleteAsync({rowClassName} row, CancellationToken ct = default)");
         builder.AppendLine("    {");
         builder.AppendLine(hasPrimaryKey
             ? $"        return ctx.DeleteByIdAsync<{className}, {keyType}>(row.Key, ct);"
-            : "        throw new NotImplementedException();");
+            : $"        {throwMessage}");
         builder.AppendLine("    }");
         builder.AppendLine();
 
@@ -308,7 +315,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         }
         else
         {
-            builder.AppendLine("        throw new NotImplementedException();");
+            builder.AppendLine($"        {throwMessage}");
         }
 
         builder.AppendLine("    }");
@@ -319,20 +326,26 @@ internal sealed class MsSqlModelWriter : IModelWriter
         string className,
         string rowClassName,
         ColumnModel? primaryKey,
-        IReadOnlyList<ColumnModel> columns)
+        IReadOnlyList<ColumnModel> columns,
+        bool isView = false)
     {
-        var hasPrimaryKey = primaryKey is not null;
+        var hasPrimaryKey = primaryKey is not null && !isView;
 
         var allColumns = columns.ToArray();
         var columnsWithoutPk = columns
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
 
-        builder.AppendLine($"    public override async Task<int> InsertAsync({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
+        builder.AppendLine(
+            isView
+                ? $"    public override Task<int> InsertAsync({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)"
+                : $"    public override async Task<int> InsertAsync({rowClassName} row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
-        if (columns.Count == 0)
+        if (columns.Count == 0 || isView)
         {
-            builder.AppendLine("        throw new NotImplementedException();");
+            builder.AppendLine(isView
+                ? "        throw new NotImplementedException(\"InsertAsync is not supported: the object is a view and is read-only.\");"
+                : "        throw new NotImplementedException();");
         }
         else
         {
@@ -399,11 +412,16 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        builder.AppendLine($"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
+        builder.AppendLine(
+            isView
+                ? $"    public override Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)"
+                : $"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
-        if (columns.Count == 0)
+        if (columns.Count == 0 || isView)
         {
-            builder.AppendLine("        throw new NotImplementedException();");
+            builder.AppendLine(isView
+                ? "        throw new NotImplementedException(\"InsertAsync is not supported: the object is a view and is read-only.\");"
+                : "        throw new NotImplementedException();");
         }
         else
         {
@@ -535,14 +553,18 @@ internal sealed class MsSqlModelWriter : IModelWriter
         ColumnModel? primaryKey,
         IReadOnlyList<ColumnModel> updateColumns,
         IModelIdentifierHelper helper,
-        IReadOnlyList<ColumnModel> columns)
+        IReadOnlyList<ColumnModel> columns,
+        bool isView = false)
     {
-        var canUpdate = primaryKey is not null && updateColumns.Count > 0;
+        var canUpdate = primaryKey is not null && updateColumns.Count > 0 && !isView;
+        var throwMessage = isView
+            ? "throw new NotImplementedException(\"UpdateAsync is not supported: the object is a view and is read-only.\");"
+            : "throw new NotImplementedException();";
         builder.AppendLine($"    public override async Task<int> UpdateAsync({rowClassName} row, bool reload = false, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
-            builder.AppendLine("        throw new NotImplementedException();");
+            builder.AppendLine($"        {throwMessage}");
         }
         else
         {
@@ -590,7 +612,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("    {");
         if (!canUpdate)
         {
-            builder.AppendLine("        throw new NotImplementedException();");
+            builder.AppendLine($"        {throwMessage}");
         }
         else
         {

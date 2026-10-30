@@ -1,6 +1,6 @@
 # SqlNative.ModelGenerator
 
-Code generator for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD entity, and a context, for every table in the schema.
+Code generator for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD entity, and a context, for every table in the schema. For SQL Server, database views are generated as well, as read-only models.
 
 Supports **SQL Server**, **MySQL**, **PostgreSQL** and **Oracle**. The generated code targets the core `SqlNative` package and compiles against any of its four dialect base classes.
 
@@ -149,7 +149,7 @@ Exit codes: `0` success, `1` bad arguments or generation failure, `2` unsupporte
 
 | Engine | Reads from | Scope |
 | --- | --- | --- |
-| `mssql` | `sys.tables` + `sys.columns` | User tables where `is_ms_shipped = 0`, all schemas. |
+| `mssql` | `sys.tables` + `sys.views` + `sys.columns` | User tables where `is_ms_shipped = 0`, all schemas. Views are generated too, as read-only models (`Insert`/`Update`/`Delete` throw `NotImplementedException`). |
 | `mysql` | `SHOW TABLES` | The connected database only. |
 | `postgresql` | `information_schema.tables` | All `BASE TABLE`s, excluding `pg_catalog` and `information_schema`. |
 | `oracle` | `all_tables` | Tables owned by the connected user; skips nested and IOT-overflow tables. |
