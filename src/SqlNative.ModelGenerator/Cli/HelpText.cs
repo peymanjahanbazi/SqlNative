@@ -24,6 +24,9 @@ internal static class HelpText
           --exclude-tables   Skip tables matching these patterns. Same syntax as --include-tables.
                         Applied after --include-tables.                   (aliases: --exclude)
           --help        Prints this help and exits.                       (aliases: --h, --?)
+          -i <file>     Read parameters from <file>. Multi-line content works: newlines act as
+                        separators like a space, quotes group values, e.g. --cs "conn str".
+                        Command-line options override file values; table filters are combined. (alias: --input-file)
 
         SAMPLES:
           1. Print the usage:
@@ -55,6 +58,9 @@ internal static class HelpText
 
          10. Generate models for tables whose name starts with "e" (the '_' wildcard):
              SqlNative.ModelGenerator --cs "..." --engine mysql --folder "./models" --package "Sample.App.Models" --include-tables "e_"
+
+         11. Read the parameters from a file, overriding the engine on the command line:
+             SqlNative.ModelGenerator -i params.txt --engine mssql
 
         NOTES:
           - One <TableName>.cs file is generated per database table, plus a <ContextName>.cs file.

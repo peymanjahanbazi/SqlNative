@@ -8,7 +8,15 @@ internal static class CliRunner
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        var parseResult = OptionParser.Parse(args);
+        var (inputArgs, inputFileError) = InputFileLoader.Load(args);
+        if (inputFileError is not null)
+        {
+            Console.Error.WriteLine($"Error: {inputFileError}");
+            Console.Error.WriteLine("Run 'SqlNative.ModelGenerator --help' for usage.");
+            return 1;
+        }
+
+        var parseResult = OptionParser.Parse(inputArgs);
         switch (parseResult.Status)
         {
             case ParseStatus.Help:

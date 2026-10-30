@@ -121,6 +121,26 @@ sqlnative-gen --cs <connectionString> --engine <mysql|mssql|postgresql|oracle>
 
 Both `--key value` and `--key=value` syntaxes work. Every option must start with `--`. Engine names are case-insensitive, and `pg`/`postgres`, `sqlserver`/`sql-server` and `ora`/`oradb` normalise to `postgresql`, `mssql` and `oracle`.
 
+### Parameters from a file (`-i`)
+
+```
+sqlnative-gen -i <file> [command-line options...]
+```
+
+`-i <file>` (alias `--input-file`, also `-i=file`) reads parameters from a text file and behaves as if they were typed on the command line. The file is multi-line: newlines act exactly like a space, so
+
+```
+--cs "Server=localhost;Database=shop;User ID=root;Password=p@ssw0rd"
+--include-tables "ab,c"
+```
+
+is the same as `--cs "Server=localhost;..." --include-tables "ab,c"`. Double or single quotes group values that contain spaces or commas. Files may nest `-i` (up to 10 levels); paths are resolved from the current directory.
+
+Priority rules when both are given:
+
+- For single-occurrence options (`--cs`, `--engine`, `--folder`, `--package`, `--context`, `--help`) the command-line value overrides the file value. Example: `sqlnative-gen -i params.txt --engine mssql` where `params.txt` contains `--engine mysql` connects to SQL Server.
+- `--include-tables` and `--exclude-tables` accumulate: patterns from the file and from the command line are all applied.
+
 Table patterns support the `_` wildcard, which matches any sequence of characters: `e_` matches every table whose name starts with `e`, `_log` matches tables ending in `log`. Matching is case-insensitive and against the plain table name; a `schema.table` pattern matches the schema-qualified name. If both `--include-tables` and `--exclude-tables` are given, the include filter is applied first, then the exclude filter removes matching tables.
 
 Exit codes: `0` success, `1` bad arguments or generation failure, `2` unsupported engine.
