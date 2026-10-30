@@ -1,11 +1,8 @@
 using Microsoft.Extensions.Logging;
 using System.Data.Common;
-using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SqlNative;
 
@@ -225,7 +222,7 @@ public class Query
         foreach (var param in this.Parameters)
         {
             var name = param.Key.StartsWith("@", StringComparison.Ordinal) ? param.Key : "@" + param.Key;
-            if (param.Value == null)
+            /*if (param.Value == null)
             {
                 sql = sql.Replace(name, "NULL");
                 continue;
@@ -236,7 +233,7 @@ public class Query
             {
                 sql = sql.Replace(name, Convert.ToString(param.Value, CultureInfo.InvariantCulture));
                 continue;
-            }
+            }*/
             var dbParam = command.CreateParameter();
             dbParam.ParameterName = name;
             dbParam.Value = param.Value ?? DBNull.Value;
