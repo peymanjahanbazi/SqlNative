@@ -457,7 +457,7 @@ but no `DefaultContext` type exists anywhere in the solution — the base class 
 UPDATE <table> JOIN (<source>) t2 ON <table>.Id = t2.Id SET <table>.Col = t2.Col
 ```
 
-`UPDATE … JOIN` is MySQL-only. SQL Server wants `UPDATE t SET … FROM t JOIN (…), PostgreSQL wants `UPDATE t SET … FROM (…) t2 WHERE …`, and Oracle wants `MERGE INTO t USING (…) t2 ON … WHEN MATCHED THEN UPDATE SET …`. Only the MySQL writer's `INNER JOIN (VALUES ROW(…), …)` is valid, and that form needs MySQL 8.0.19 or later.
+`UPDATE … JOIN` is MySQL-only. SQL Server wants `UPDATE t SET … FROM t JOIN (…), PostgreSQL wants `UPDATE t SET … FROM (…) t2 WHERE …`, and Oracle wants `MERGE INTO t USING (…) t2 ON … WHEN MATCHED THEN UPDATE SET …`. Only the MySQL writer's `INNER JOIN` is valid MySQL, and the derived table it joins (a chain of `SELECT … UNION ALL SELECT …`) is compatible with MySQL 5.7 — no `ROW(…)` constructor is used anymore.
 
 **3. MySQL batch insert needs MySQL 8.0.19+.** Same reason — the `VALUES ROW(…)` derived-table form. On older servers, use the `Update(List<row>)` path or issue the inserts yourself.
 

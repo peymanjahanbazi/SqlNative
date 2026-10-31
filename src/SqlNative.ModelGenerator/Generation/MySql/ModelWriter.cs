@@ -433,32 +433,30 @@ internal sealed class MySqlModelWriter : IModelWriter
             builder.AppendLine("        {");
             builder.AppendLine("            var placeholders = new List<string>();");
             builder.AppendLine();
-            if (columnsWithoutPk.Length > 0)
+            var pkColumns = allColumns.Where(x => x.Column.IsPrimaryKey).ToArray();
+            var pIndex = 0;
+            if (pkColumns.Length > 0)
             {
-                builder.AppendLine("            if (skipPrimaryKey)");
+                builder.AppendLine("            if (!skipPrimaryKey)");
                 builder.AppendLine("            {");
-                for (var i = 0; i < columnsWithoutPk.Length; i++)
+                foreach (var pk in pkColumns)
                 {
-                    var c = columnsWithoutPk[i];
-                    builder.AppendLine($"                var p{i} = \"@p\" + index++;");
-                    builder.AppendLine($"                parameters[p{i}] = item.{c.RowName};");
-                    builder.AppendLine($"                placeholders.Add(p{i});");
+                    builder.AppendLine($"                var p{pIndex} = \"@p\" + index++;");
+                    builder.AppendLine($"                parameters[p{pIndex}] = item.{pk.RowName};");
+                    builder.AppendLine($"                placeholders.Add(p{pIndex});");
+                    pIndex++;
                 }
+
                 builder.AppendLine("            }");
             }
 
-            if (allColumns.Length > 0)
+            for (var i = 0; i < columnsWithoutPk.Length; i++)
             {
-                builder.AppendLine(columnsWithoutPk.Length > 0 ? "            else" : "            if (!skipPrimaryKey)");
-                builder.AppendLine("            {");
-                for (var i = 0; i < allColumns.Length; i++)
-                {
-                    var c = allColumns[i];
-                    builder.AppendLine($"                var p{i} = \"@p\" + index++;");
-                    builder.AppendLine($"                parameters[p{i}] = item.{c.RowName};");
-                    builder.AppendLine($"                placeholders.Add(p{i});");
-                }
-                builder.AppendLine("            }");
+                var c = columnsWithoutPk[i];
+                builder.AppendLine($"            var p{pIndex} = \"@p\" + index++;");
+                builder.AppendLine($"            parameters[p{pIndex}] = item.{c.RowName};");
+                builder.AppendLine($"            placeholders.Add(p{pIndex});");
+                pIndex++;
             }
 
             builder.AppendLine();
@@ -662,7 +660,6 @@ internal sealed class MySqlModelWriter : IModelWriter
             setParts.Add("{e." + column.StructureName + "} = t2." + helper.WrapObjectName(column.Column.Name));
         }
 
-        var t2ColumnsList = string.Join(", ", sourceColumns.Select(c => helper.WrapObjectName(c.Column.Name)));
         var onClause = "{e." + primaryKey.StructureName + "} = t2." + helper.WrapObjectName(primaryKey.Column.Name);
 
         builder.AppendLine($"    private async Task<int> UpdateBatchAsync(List<{rowClassName}> rows, int offset, int count, CancellationToken ct)");
@@ -676,7 +673,7 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine("            var item = rows[offset + i];");
         for (var i = 0; i < sourceColumns.Count; i++)
         {
-            builder.AppendLine($"            var p{i} = \"@p\" + (index++).ToString();");
+            builder.AppendLine($"            var p{i} = \"@p\" + index++;");
         }
 
         builder.AppendLine();
@@ -687,15 +684,22 @@ internal sealed class MySqlModelWriter : IModelWriter
 
         builder.AppendLine();
         var rowPlaceholders = string.Join(", ", Enumerable.Range(0, sourceColumns.Count).Select(i => "{p" + i + "}"));
-        builder.AppendLine("            tuples.Add($\"ROW(" + rowPlaceholders + ")\");");
+        // MySQL 5.7 has no ROW(...) values constructor, so the derived table is built
+        // from UNION ALL'ed SELECTs. The first SELECT (re)declares the column names,
+        // the rest just select the parameter values in order.
+        var firstRow = string.Join(", ", sourceColumns.Select((c, i) => "{p" + i + "} AS " + helper.WrapObjectName(c.Column.Name)));
+        builder.AppendLine("            if (i == 0)");
+        builder.AppendLine("                tuples.Add($\"SELECT " + firstRow + "\");");
+        builder.AppendLine("            else");
+        builder.AppendLine("                tuples.Add($\"SELECT " + rowPlaceholders + "\");");
         builder.AppendLine("        }");
         builder.AppendLine();
-        builder.AppendLine("        var valuesClause = string.Join(\", \", tuples);");
+        builder.AppendLine("        var valuesClause = string.Join(\" UNION ALL \", tuples);");
         builder.AppendLine();
         builder.AppendLine($"        return await ctx.BuildQuery<{className}>((q, e) => q");
         builder.AppendLine("            .Config(() => e.Alias = \"t1\")");
         builder.AppendLine("            .Append($\"UPDATE {e}\")");
-        builder.AppendLine($"            .Append($\"INNER JOIN (VALUES \" + valuesClause + $\") AS t2({t2ColumnsList}) ON " + onClause + "\")");
+        builder.AppendLine($"            .Append($\"INNER JOIN (\" + valuesClause + $\") AS t2 ON " + onClause + "\")");
         builder.AppendLine("            .Append($\"SET " + string.Join(", ", setParts) + "\")");
         builder.AppendLine("            .SetParameters(parameters)");
         builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
