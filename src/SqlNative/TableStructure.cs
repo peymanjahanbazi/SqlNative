@@ -17,13 +17,10 @@ public abstract class TableStructure
     public abstract string TableName { get; }
 
     /// <summary>Gets the quoted table name used in generated SQL.</summary>
-    protected abstract string QuotedTableName { get; }
+    public abstract string QuotedTableName { get; }
 
     /// <summary>Gets the wildcard column representing all columns in the table.</summary>
     public abstract TableColumn Star { get; }
-
-    /// <summary>Gets the primary key column, if the table has one.</summary>
-    public abstract TableColumn? PKey { get; }
 
     /// <summary>Returns the SQL representation of this table.</summary>
     /// <returns>The quoted table name, optionally followed by its alias.</returns>

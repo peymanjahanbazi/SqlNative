@@ -12,13 +12,13 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
     private static readonly HashSet<string> StructureReservedNames = new(StringComparer.Ordinal)
     {
-        "Alias", "DisableAlias", "PKey", "Star", "TableName", "Row", "Entity",
+        "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity",
         "Schema", "ToString", "Equals", "GetHashCode", "GetType",
     };
 
     private static readonly HashSet<string> RowReservedNames = new(StringComparer.Ordinal)
     {
-        "Key", "TableName", "Star", "GetOrders", "SetFields", "OrdinalN",
+        "TableName", "Star", "GetOrders", "SetFields", "OrdinalN",
         "ToString", "Equals", "GetHashCode", "GetType",
     };
 
@@ -47,7 +47,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
         var columns = BuildColumns(table, className, helper);
         var primaryKey = columns.FirstOrDefault(c => c.Column.IsPrimaryKey);
-        var keyType = primaryKey?.ClrType ?? "object";
         var rowClassName = className + "Row";
 
         var builder = new StringBuilder();
@@ -64,9 +63,9 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
         WriteStructure(builder, table, className, columns, primaryKey, helper);
         builder.AppendLine();
-        WriteRow(builder, rowClassName, columns, primaryKey, keyType, helper);
+        WriteRow(builder, rowClassName, columns, helper);
         builder.AppendLine();
-        WriteEntity(builder, table, className, entityClassName, rowClassName, contextName, columns, primaryKey, keyType, helper);
+        WriteEntity(builder, table, className, entityClassName, rowClassName, contextName, columns, primaryKey, helper);
 
         return builder.ToString();
     }
@@ -103,15 +102,13 @@ internal sealed class MsSqlModelWriter : IModelWriter
         ColumnModel? primaryKey,
         IModelIdentifierHelper helper)
     {
-        builder.AppendLine(primaryKey is null
-            ? $"public partial class {className} : MsSqlTableStructure"
-            : $"public partial class {className} : MsSqlTableStructure, HasPrimaryKey");
+        builder.AppendLine($"public partial class {className} : MsSqlTableStructure");
 
         builder.AppendLine("{");
         builder.AppendLine(
             $"    public override string TableName {{ get; }} = {helper.EscapeCsStringLiteral(table.Name)};");
         builder.AppendLine(
-            $"    protected override string QuotedTableName {{ get; }} = {helper.EscapeCsStringLiteral(BuildQuatedName(table, helper))};");
+            $"    public override string QuotedTableName {{ get; }} = {helper.EscapeCsStringLiteral(BuildQuatedName(table, helper))};");
 
         if (!string.IsNullOrEmpty(table.Schema))
         {
@@ -124,12 +121,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine($"    public TableColumn {column.StructureName} {{ get; private set; }}");
         }
 
-        builder.AppendLine();
-        builder.AppendLine(primaryKey is null
-            ? "    public override TableColumn? PKey => null;"
-            : $"    public override TableColumn? PKey => {primaryKey.StructureName};");
-
-        builder.AppendLine();
         builder.AppendLine($"    public {className}()");
         builder.AppendLine("    {");
         foreach (var column in columns)
@@ -137,7 +128,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             var needsQuoting = helper.NeedsBackticks(column.Column.Name);
             var needsQuotingLiteral = needsQuoting ? "true" : "false";
             builder.AppendLine(
-                $"        {column.StructureName} = new MsSqlColumn({helper.EscapeCsStringLiteral(column.Column.Name)}, {needsQuotingLiteral}, {helper.EscapeCsStringLiteral(column.Column.RawType)}, typeof({column.ClrType}), this);");
+                $"        {column.StructureName} = new MsSqlColumn({helper.EscapeCsStringLiteral(column.Column.Name)}, {needsQuotingLiteral}, {helper.EscapeCsStringLiteral(column.Column.RawType)}, typeof({column.ClrType}), {column.Column.Length}, this);");
         }
 
         builder.AppendLine("    }");
@@ -148,11 +139,9 @@ internal sealed class MsSqlModelWriter : IModelWriter
         StringBuilder builder,
         string rowClassName,
         IReadOnlyList<ColumnModel> columns,
-        ColumnModel? primaryKey,
-        string keyType,
         IModelIdentifierHelper helper)
     {
-        builder.AppendLine($"public partial class {rowClassName} : TableRow<{keyType}>");
+        builder.AppendLine($"public partial class {rowClassName} : TableRow");
         builder.AppendLine("{");
 
         foreach (var column in columns)
@@ -164,9 +153,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine($"    {attribute}public {column.RowType} {column.RowName} {{ get; set; }}{initializer}");
         }
 
-        builder.AppendLine(primaryKey is null
-            ? $"    public override {keyType} Key => default!;"
-            : $"    public override {keyType} Key => {primaryKey.RowName};");
         builder.AppendLine();
         WriteGetOrders(builder, columns, helper);
         builder.AppendLine();
@@ -248,7 +234,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
         string contextName,
         IReadOnlyList<ColumnModel> columns,
         ColumnModel? primaryKey,
-        string keyType,
         IModelIdentifierHelper helper)
     {
         // Views are treated as read-only: only SELECT is implemented.
@@ -258,7 +243,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {entityClassName} : DbEntity<{rowClassName}, {className}, {keyType}>");
+            $"public partial class {entityClassName} : DbEntity<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
@@ -269,7 +254,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("    }");
         builder.AppendLine();
 
-        WriteDelete(builder, className, rowClassName, primaryKey, keyType, isView);
+        WriteDelete(builder, className, rowClassName, primaryKey, isView);
         builder.AppendLine();
         WriteInsert(builder, className, rowClassName, primaryKey, columns, isView);
         builder.AppendLine();
@@ -285,7 +270,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
             string className,
             string rowClassName,
             ColumnModel? primaryKey,
-            string keyType,
             bool isView = false)
     {
         var hasPrimaryKey = primaryKey is not null && !isView;
@@ -295,9 +279,20 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
         builder.AppendLine($"    public override Task<int> DeleteAsync({rowClassName} row, CancellationToken ct = default)");
         builder.AppendLine("    {");
-        builder.AppendLine(hasPrimaryKey
-            ? $"        return ctx.DeleteByIdAsync<{className}, {keyType}>(row.Key, ct);"
-            : $"        {throwMessage}");
+        if (hasPrimaryKey)
+        {
+            builder.AppendLine($"        return ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine("            .Config(() => e.DisableAlias = true)");
+            builder.AppendLine("            .Append($\"DELETE FROM {e}\")");
+            builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKey!.StructureName}}} = @Key\")");
+            builder.AppendLine($"            .SetParameters(new {{ Key = row.{primaryKey.RowName} }})");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
+        }
+        else
+        {
+            builder.AppendLine($"        {throwMessage}");
+        }
+
         builder.AppendLine("    }");
         builder.AppendLine();
 
@@ -310,8 +305,22 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            return Task.FromResult(0);");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine(
-                $"        return ctx.DeleteByIdsAsync<{className}, {keyType}>(rows.Select(item => item.Key), ct);");
+            builder.AppendLine("        var keys = new List<string>();");
+            builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
+            builder.AppendLine("        var index = 1;");
+            builder.AppendLine("        foreach (var item in rows)");
+            builder.AppendLine("        {");
+            builder.AppendLine("            var p = \"@p\" + index++;");
+            builder.AppendLine($"            parameters[p] = item.{primaryKey!.RowName};");
+            builder.AppendLine("            keys.Add(p);");
+            builder.AppendLine("        }");
+            builder.AppendLine();
+            builder.AppendLine($"        return ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine("            .Config(() => e.DisableAlias = true)");
+            builder.AppendLine("            .Append($\"DELETE FROM {e}\")");
+            builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKey.StructureName}}} IN (\" + string.Join(\", \", keys) + \")\")");
+            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
         else
         {
@@ -397,14 +406,15 @@ internal sealed class MsSqlModelWriter : IModelWriter
                 builder.AppendLine("        }");
                 builder.AppendLine();
             }
-            builder.AppendLine($"        var affected = await ctx.InsertAsync<{className}>(e => new InsertModel");
-            builder.AppendLine("        {");
-            builder.AppendLine($"            Columns = skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr},");
-            builder.AppendLine($"            Values = skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\",");
-            builder.AppendLine("            Parameters = skipPrimaryKey");
+            builder.AppendLine($"        var affected = await ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine("            .Config(() => e.DisableAlias = true)");
+            builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
+            builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? {withoutPkColumnsExpr} : {allColumnsExpr})}})\")");
+            builder.AppendLine($"            .Append($\"VALUES ({{(skipPrimaryKey ? $\"{withoutPkValues}\" : $\"{allValues}\")}})\")");
+            builder.AppendLine("            .SetParameters(skipPrimaryKey");
             builder.AppendLine($"                ? (object)new {{ {withoutPkParameters} }}");
-            builder.AppendLine($"                    : new {{ {allParameters} }}");
-            builder.AppendLine("        }, ct).ConfigureAwait(false);");
+            builder.AppendLine($"                : new {{ {allParameters} }})");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine("        return affected;");
         }
@@ -450,32 +460,30 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("        {");
             builder.AppendLine("            var placeholders = new List<string>();");
             builder.AppendLine();
-            if (columnsWithoutPk.Length > 0)
+            var pkColumns = allColumns.Where(x => x.Column.IsPrimaryKey).ToArray();
+            var pIndex = 0;
+            if (pkColumns.Length > 0)
             {
-                builder.AppendLine("            if (skipPrimaryKey)");
+                builder.AppendLine("            if (!skipPrimaryKey)");
                 builder.AppendLine("            {");
-                for (var i = 0; i < columnsWithoutPk.Length; i++)
+                foreach (var pk in pkColumns)
                 {
-                    var c = columnsWithoutPk[i];
-                    builder.AppendLine($"                var p{i} = \"@p\" + index++;");
-                    builder.AppendLine($"                parameters[p{i}] = item.{c.RowName};");
-                    builder.AppendLine($"                placeholders.Add(p{i});");
+                    builder.AppendLine($"                var p{pIndex} = \"@p\" + index++;");
+                    builder.AppendLine($"                parameters[p{pIndex}] = item.{pk.RowName};");
+                    builder.AppendLine($"                placeholders.Add(p{pIndex});");
+                    pIndex++;
                 }
+
                 builder.AppendLine("            }");
             }
 
-            if (allColumns.Length > 0)
+            for (var i = 0; i < columnsWithoutPk.Length; i++)
             {
-                builder.AppendLine(columnsWithoutPk.Length > 0 ? "            else" : "            if (!skipPrimaryKey)");
-                builder.AppendLine("            {");
-                for (var i = 0; i < allColumns.Length; i++)
-                {
-                    var c = allColumns[i];
-                    builder.AppendLine($"                var p{i} = \"@p\" + index++;");
-                    builder.AppendLine($"                parameters[p{i}] = item.{c.RowName};");
-                    builder.AppendLine($"                placeholders.Add(p{i});");
-                }
-                builder.AppendLine("            }");
+                var c = columnsWithoutPk[i];
+                builder.AppendLine($"            var p{pIndex} = \"@p\" + index++;");
+                builder.AppendLine($"            parameters[p{pIndex}] = item.{c.RowName};");
+                builder.AppendLine($"            placeholders.Add(p{pIndex});");
+                pIndex++;
             }
 
             builder.AppendLine();
@@ -569,6 +577,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         else
         {
             var pkStructure = primaryKey!.StructureName;
+            var pkRowName = primaryKey!.RowName;
             var set = string.Join(", ", updateColumns.Select(c => "{e." + c.StructureName + "} = @" + c.RowName));
             var parameters = string.Join(", ", updateColumns.Select(c => c.RowName + " = row." + c.RowName));
 
@@ -585,7 +594,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("                .Append($\"SET " + set + "\")");
             builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} = @Key\")");
             builder.AppendLine("                .Append(\"OUTPUT INSERTED.*\")");
-            builder.AppendLine($"                .SetParameters(new {{ {parameters}, Key = row.Key }})");
+            builder.AppendLine($"                .SetParameters(new {{ {parameters}, Key = row.{pkRowName} }})");
             builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
             builder.AppendLine();
             builder.AppendLine("            if (loaded.Count > 0)");
@@ -597,12 +606,15 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            return loaded.Count;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine($"        return await ctx.UpdateAsync<{className}>(e => new UpdateModel");
-            builder.AppendLine("            {");
-            builder.AppendLine("                Set = $\"" + set + "\",");
-            builder.AppendLine($"                Where = $\"{{e.{pkStructure}}} = @Key\",");
-            builder.AppendLine($"                Parameters = new {{ {parameters}, Key = row.Key }}");
-            builder.AppendLine("            }, ct).ConfigureAwait(false);");
+            builder.AppendLine($"        var affected = await ctx.BuildQuery<{className}>((q, e) => q");
+            builder.AppendLine("            .Config(() => e.DisableAlias = true)");
+            builder.AppendLine("            .Append($\"UPDATE {e}\")");
+            builder.AppendLine("            .Append($\"SET " + set + "\")");
+            builder.AppendLine($"            .Append($\"WHERE {{e.{pkStructure}}} = @Key\")");
+            builder.AppendLine($"            .SetParameters(new {{ {parameters}, Key = row.{pkRowName} }})");
+            builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
+            builder.AppendLine();
+            builder.AppendLine("        return affected;");
         }
 
         builder.AppendLine("    }");
@@ -704,7 +716,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("            var item = rows[offset + i];");
         for (var i = 0; i < sourceColumns.Count; i++)
         {
-            builder.AppendLine($"            var p{i} = \"@p\" + (index++).ToString();");
+            builder.AppendLine($"            var p{i} = \"@p\" + index++;");
         }
 
         builder.AppendLine();

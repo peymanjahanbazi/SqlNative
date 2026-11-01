@@ -62,6 +62,7 @@ internal sealed class MsSqlEngine : IDatabaseEngine
     {
         var columns = new List<ColumnInfo>();
         var primaryKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var lengths = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
 
         // Views cannot have primary key constraints, so the lookup is skipped for them.
         if (!isView)
@@ -89,6 +90,24 @@ internal sealed class MsSqlEngine : IDatabaseEngine
             }
         }
 
+        await using (var lengthCommand = connection.CreateCommand())
+        {
+            lengthCommand.CommandText = """
+                SELECT COLUMN_NAME, COALESCE(CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 0)
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table;
+                """;
+            AddParameter(lengthCommand, "@schema", schema);
+            AddParameter(lengthCommand, "@table", tableName);
+
+            await using var lengthReader = await lengthCommand.ExecuteReaderAsync(cancellationToken);
+            while (await lengthReader.ReadAsync(cancellationToken))
+            {
+                var columnName = lengthReader.GetString(0);
+                lengths[columnName] = lengthReader.IsDBNull(1) ? 0 : lengthReader.GetInt32(1);
+            }
+        }
+
         await using (var command = connection.CreateCommand())
         {
             command.CommandText = """
@@ -113,13 +132,15 @@ internal sealed class MsSqlEngine : IDatabaseEngine
                 var isIdentity = reader.GetBoolean(3);
                 var isComputed = reader.GetBoolean(4);
                 var isPrimaryKey = primaryKeys.Contains(columnName);
+                lengths.TryGetValue(columnName, out var length);
 
                 columns.Add(new ColumnInfo(
                     Name: columnName,
                     RawType: rawType,
                     IsNullable: isNullable && !isComputed,
                     IsPrimaryKey: isPrimaryKey,
-                    IsAutoIncrement: isIdentity));
+                    IsAutoIncrement: isIdentity,
+                    Length: length));
             }
         }
 

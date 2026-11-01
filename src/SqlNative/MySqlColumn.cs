@@ -1,5 +1,3 @@
-using System;
-
 namespace SqlNative;
 
 /// <summary>
@@ -12,9 +10,10 @@ public class MySqlColumn : TableColumn
     /// <param name="needsBackticks">Whether the name must be enclosed in backticks.</param>
     /// <param name="sqlType">The SQL data type of the column.</param>
     /// <param name="dotnetType">The CLR type mapped to the column.</param>
+    /// <param name="length">The length of the column.</param>
     /// <param name="table">The table that owns the column.</param>
-    public MySqlColumn(string name, bool needsBackticks, string sqlType, Type dotnetType, MySqlTableStructure table)
-        : base(name, sqlType, dotnetType, table)
+    public MySqlColumn(string name, bool needsBackticks, string sqlType, Type dotnetType, long length, MySqlTableStructure table)
+        : base(name, sqlType, dotnetType, length, table)
     {
         NeedsBackticks = needsBackticks;
     }

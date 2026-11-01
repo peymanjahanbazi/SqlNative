@@ -1,6 +1,6 @@
 namespace SqlNative.ModelGenerator.Schema;
 
-internal sealed record ColumnInfo(string Name, string RawType, bool IsNullable, bool IsPrimaryKey, bool IsAutoIncrement);
+internal sealed record ColumnInfo(string Name, string RawType, bool IsNullable, bool IsPrimaryKey, bool IsAutoIncrement, long Length = 0);
 
 internal sealed record TableInfo(string? Schema, string Name, IReadOnlyList<ColumnInfo> Columns, bool IsView = false);
 

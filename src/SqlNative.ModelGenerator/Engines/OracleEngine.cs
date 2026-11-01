@@ -165,7 +165,8 @@ internal sealed class OracleEngine : IDatabaseEngine
             command.CommandText = """
                 SELECT column_name,
                        data_type,
-                       nullable
+                       nullable,
+                       COALESCE(char_length, data_precision, 0) AS column_length
                 FROM all_tab_columns
                 WHERE owner = :owner
                   AND table_name = :table_name
@@ -180,6 +181,7 @@ internal sealed class OracleEngine : IDatabaseEngine
                 var columnName = reader.GetString(0);
                 var rawType = reader.GetString(1);
                 var nullableText = reader.GetString(2);
+                var length = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
 
                 var isNullable = string.Equals(nullableText, "Y", StringComparison.OrdinalIgnoreCase);
                 var isPrimaryKey = primaryKeys.Contains(columnName);
@@ -189,7 +191,8 @@ internal sealed class OracleEngine : IDatabaseEngine
                     RawType: rawType,
                     IsNullable: isNullable,
                     IsPrimaryKey: isPrimaryKey,
-                    IsAutoIncrement: false));
+                    IsAutoIncrement: false,
+                    Length: length));
             }
         }
         catch (OracleException ex)

@@ -28,7 +28,7 @@ internal sealed partial class MySqlEngine : IDatabaseEngine
         var tables = new List<TableInfo>(tableNames.Count);
         foreach (var tableName in tableNames)
         {
-            tables.Add(await DescribeTableAsync(connection, tableName, cancellationToken));
+            tables.Add(await DescribeTableAsync(connection, databaseName, tableName, cancellationToken));
         }
 
         return new DatabaseSchema(databaseName, tables);
@@ -53,21 +53,48 @@ internal sealed partial class MySqlEngine : IDatabaseEngine
         return string.IsNullOrWhiteSpace(builder.Database) ? null : builder.Database;
     }
 
-    private static async Task<TableInfo> DescribeTableAsync(MySqlConnection connection, string tableName, CancellationToken cancellationToken)
+    private static async Task<TableInfo> DescribeTableAsync(MySqlConnection connection, string databaseName, string tableName, CancellationToken cancellationToken)
     {
         var columns = new List<ColumnInfo>();
+        var lengths = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrWhiteSpace(databaseName))
+        {
+            await using var lengthCommand = connection.CreateCommand();
+            lengthCommand.CommandText =
+                "SELECT COLUMN_NAME, CAST(COALESCE(CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 0) AS SIGNED) " +
+                "FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @database AND TABLE_NAME = @table;";
+            var databaseParameter = lengthCommand.CreateParameter();
+            databaseParameter.ParameterName = "@database";
+            databaseParameter.Value = databaseName;
+            lengthCommand.Parameters.Add(databaseParameter);
+            var tableParameter = lengthCommand.CreateParameter();
+            tableParameter.ParameterName = "@table";
+            tableParameter.Value = tableName;
+            lengthCommand.Parameters.Add(tableParameter);
+
+            await using var lengthReader = await lengthCommand.ExecuteReaderAsync(cancellationToken);
+            while (await lengthReader.ReadAsync(cancellationToken))
+            {
+                var columnName = lengthReader.GetString(0);
+                lengths[columnName] = lengthReader.IsDBNull(1) ? 0 : lengthReader.GetInt64(1);
+            }
+        }
 
         await using var command = connection.CreateCommand();
         command.CommandText = $"DESCRIBE `{tableName.Replace("`", "``")}`;";
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var columnName = reader.GetString(0);
+            lengths.TryGetValue(columnName, out var length);
             columns.Add(new ColumnInfo(
-                Name: reader.GetString(0),
+                Name: columnName,
                 RawType: reader.GetString(1),
                 IsNullable: string.Equals(reader.GetString(2), "YES", StringComparison.OrdinalIgnoreCase),
                 IsPrimaryKey: string.Equals(reader.GetString(3), "PRI", StringComparison.OrdinalIgnoreCase),
-                IsAutoIncrement: GetSafeString(reader, 5).Contains("auto_increment", StringComparison.OrdinalIgnoreCase)));
+                IsAutoIncrement: GetSafeString(reader, 5).Contains("auto_increment", StringComparison.OrdinalIgnoreCase),
+                Length: length));
         }
 
         return new TableInfo(Schema: null, Name: tableName, Columns: columns);

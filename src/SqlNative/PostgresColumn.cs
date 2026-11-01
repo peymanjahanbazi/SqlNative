@@ -1,5 +1,3 @@
-using System;
-
 namespace SqlNative;
 
 /// <summary>
@@ -12,9 +10,10 @@ public class PostgresColumn : TableColumn
     /// <param name="needsDoubleQuotes">Whether the name must be enclosed in double quotes.</param>
     /// <param name="sqlType">The SQL data type of the column.</param>
     /// <param name="dotnetType">The CLR type mapped to the column.</param>
+    /// <param name="length">The length of the column.</param>
     /// <param name="table">The table that owns the column.</param>
-    public PostgresColumn(string name, bool needsDoubleQuotes, string sqlType, Type dotnetType, PostgresTableStructure table)
-        : base(name, sqlType, dotnetType, table)
+    public PostgresColumn(string name, bool needsDoubleQuotes, string sqlType, Type dotnetType, long length, PostgresTableStructure table)
+        : base(name, sqlType, dotnetType, length, table)
     {
         NeedsDoubleQuotes = needsDoubleQuotes;
     }

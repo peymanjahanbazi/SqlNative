@@ -5,7 +5,6 @@ namespace SqlNative;
 /// </summary>
 /// <typeparam name="Row">The row type persisted by this entity.</typeparam>
 /// <typeparam name="Structure">The table structure type used by this entity.</typeparam>
-/// <typeparam name="Pk">The primary key type used by this entity.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -13,8 +12,8 @@ namespace SqlNative;
 /// the <c>Store</c> members, which are concrete because they can be expressed in terms of
 /// the members above them.
 /// </remarks>
-public abstract class DbEntity<Row, Structure, Pk>
-    where Row : TableRow<Pk>, new()
+public abstract class DbEntity<Row, Structure>
+    where Row : TableRow, new()
     where Structure : TableStructure, new()
 {
     /// <summary>Inserts a row.</summary>
@@ -133,17 +132,6 @@ public abstract class DbEntity<Row, Structure, Pk>
     /// <returns>The number of rows affected.</returns>
     public abstract Task<int> DeleteAsync(List<Row> rows, CancellationToken ct = default);
 
-    /// <summary>
-    /// Determines whether a primary key value is <see langword="null"/> or the default value for its type.
-    /// </summary>
-    /// <param name="value">The primary key value to inspect.</param>
-    /// <returns><see langword="true"/> when the value is null or default; otherwise, <see langword="false"/>.</returns>
-    protected bool IsNullOrDefault(Pk value)
-    {
-        if (value == null) return true;
-        return EqualityComparer<Pk>.Default.Equals(value, default(Pk));
-    }
-
     /// <summary>Returns all rows from the table.</summary>
     /// <returns>All rows in the table.</returns>
     /// <remarks>
@@ -187,54 +175,4 @@ public abstract class DbEntity<Row, Structure, Pk>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The selected rows.</returns>
     public abstract Task<List<Row>> SelectAsync(Func<Structure, string> predicate, object parameters = null, CancellationToken ct = default);
-
-    /// <summary>Inserts a row when its key is empty, or updates it otherwise.</summary>
-    /// <param name="row">The row to store.</param>
-    /// <returns>The number of rows affected.</returns>
-    /// <remarks>
-    /// This method blocks on <see cref="StoreAsync(Row, CancellationToken)"/>.
-    /// Prefer the asynchronous version in asynchronous code.
-    /// </remarks>
-    public int Store(Row row)
-    {
-        return StoreAsync(row).GetAwaiter().GetResult();
-    }
-
-    /// <summary>Inserts a row when its key is empty, or updates it otherwise.</summary>
-    /// <param name="row">The row to store.</param>
-    /// <param name="ct">The token used to cancel the command.</param>
-    /// <returns>The number of rows affected.</returns>
-    public async Task<int> StoreAsync(Row row, CancellationToken ct = default)
-    {
-        if (IsNullOrDefault(row.Key))
-        {
-            return await InsertAsync(row, InsertOptions.SkipPrimaryKey, ct).ConfigureAwait(false);
-        }
-        return await UpdateAsync(row, false, ct).ConfigureAwait(false);
-    }
-
-    /// <summary>Inserts rows with empty keys and updates rows with populated keys.</summary>
-    /// <param name="rows">The rows to store.</param>
-    /// <returns>The number of rows affected.</returns>
-    /// <remarks>
-    /// This method blocks on <see cref="StoreAsync(List{Row}, CancellationToken)"/>.
-    /// Prefer the asynchronous version in asynchronous code.
-    /// </remarks>
-    public int Store(List<Row> rows)
-    {
-        return StoreAsync(rows).GetAwaiter().GetResult();
-    }
-
-    /// <summary>Inserts rows with empty keys and updates rows with populated keys.</summary>
-    /// <param name="rows">The rows to store.</param>
-    /// <param name="ct">The token used to cancel the command.</param>
-    /// <returns>The number of rows affected.</returns>
-    public async Task<int> StoreAsync(List<Row> rows, CancellationToken ct = default)
-    {
-        var updates = rows.Where(r => !IsNullOrDefault(r.Key)).ToList();
-        var inserts = rows.Where(r => IsNullOrDefault(r.Key)).ToList();
-        var inserted = await InsertAsync(inserts, InsertOptions.SkipPrimaryKey, ct).ConfigureAwait(false);
-        var updated = await UpdateAsync(updates, false, ct).ConfigureAwait(false);
-        return inserted + updated;
-    }
 }

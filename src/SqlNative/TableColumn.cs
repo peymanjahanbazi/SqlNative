@@ -9,13 +9,15 @@ public abstract class TableColumn
     /// <param name="name">The column name.</param>
     /// <param name="sqlType">The SQL data type of the column.</param>
     /// <param name="dotnetType">The CLR type mapped to the column.</param>
+    /// <param name="length">The length of the column.</param>
     /// <param name="table">The table that owns the column.</param>
-    protected TableColumn(string name, string sqlType, Type dotnetType, TableStructure table)
+    protected TableColumn(string name, string sqlType, Type dotnetType, long length, TableStructure table)
     {
         Table = table;
         Name = name;
         SqlType = sqlType;
         DotnetType = dotnetType;
+        Length = length;
     }
 
     /// <summary>Gets the table that owns this column.</summary>
@@ -29,6 +31,8 @@ public abstract class TableColumn
 
     /// <summary>Gets the SQL data type of this column.</summary>
     public string SqlType { get; }
+
+    public long Length { get; }
 
     /// <summary>Converts a column to its SQL representation.</summary>
     /// <param name="column">The column to convert.</param>

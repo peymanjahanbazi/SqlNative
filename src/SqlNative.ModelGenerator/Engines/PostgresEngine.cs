@@ -58,6 +58,7 @@ internal sealed class PostgresEngine : IDatabaseEngine
                        c.udt_name,
                        c.is_nullable,
                        c.is_identity,
+                       COALESCE(c.character_maximum_length, c.numeric_precision, 0) AS column_length,
                        EXISTS (
                            SELECT 1
                            FROM information_schema.table_constraints tc
@@ -84,14 +85,16 @@ internal sealed class PostgresEngine : IDatabaseEngine
                 var rawType = reader.GetString(1);
                 var isNullable = string.Equals(reader.GetString(2), "YES", StringComparison.OrdinalIgnoreCase);
                 var isIdentity = string.Equals(reader.GetString(3), "YES", StringComparison.OrdinalIgnoreCase);
-                var isPrimaryKey = reader.GetBoolean(4);
+                var length = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+                var isPrimaryKey = reader.GetBoolean(5);
 
                 columns.Add(new ColumnInfo(
                     Name: columnName,
                     RawType: rawType,
                     IsNullable: isNullable,
                     IsPrimaryKey: isPrimaryKey,
-                    IsAutoIncrement: isIdentity));
+                    IsAutoIncrement: isIdentity,
+                    Length: length));
 
                 if (isPrimaryKey)
                 {

@@ -13,12 +13,9 @@ public abstract class OracleTableStructure : TableStructure
     /// <summary>Gets the wildcard column representing all columns in the table.</summary>
     public override TableColumn Star { get; }
 
-    /// <summary>Gets the primary key column, if the table has one.</summary>
-    public override TableColumn? PKey { get; }
-
     /// <summary>Initializes the table structure and its wildcard column.</summary>
     protected OracleTableStructure()
     {
-        Star = new OracleColumn("*", false, "", typeof(object), this);
+        Star = new OracleColumn("*", false, "", typeof(object), 0, this);
     }
 }
