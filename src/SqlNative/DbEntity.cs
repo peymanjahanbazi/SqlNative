@@ -16,6 +16,9 @@ public abstract class DbEntity<Row, Structure>
     where Row : TableRow, new()
     where Structure : TableStructure, new()
 {
+    /// <summary>Gets the context used to run the commands of this entity.</summary>
+    public abstract SqlNativeContext Context { get; }
+
     /// <summary>Inserts a row.</summary>
     /// <param name="row">The row to insert.</param>
     /// <param name="options">The insert options.</param>
@@ -34,7 +37,10 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="options">The insert options.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The number of rows affected.</returns>
-    public abstract Task<int> InsertAsync(Row row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default);
+    public async Task<int> InsertAsync(Row row, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)
+    {
+        return await InsertAsync(new List<Row> { row }, options, ct).ConfigureAwait(false);
+    }
 
     /// <summary>Inserts a list of rows.</summary>
     /// <param name="rows">The rows to insert.</param>
@@ -74,7 +80,10 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="reload">Whether the updated row should be reloaded from the database.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The number of rows affected.</returns>
-    public abstract Task<int> UpdateAsync(Row row, bool reload = false, CancellationToken ct = default);
+    public async Task<int> UpdateAsync(Row row, bool reload = false, CancellationToken ct = default)
+    {
+        return await UpdateAsync(new List<Row> { row }, reload, ct).ConfigureAwait(false);
+    }
 
     /// <summary>Updates a list of rows.</summary>
     /// <param name="rows">The rows to update.</param>
@@ -112,7 +121,10 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="row">The row to delete.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The number of rows affected.</returns>
-    public abstract Task<int> DeleteAsync(Row row, CancellationToken ct = default);
+    public async Task<int> DeleteAsync(Row row, CancellationToken ct = default)
+    {
+        return await DeleteAsync(new List<Row> { row }, ct).ConfigureAwait(false);
+    }
 
     /// <summary>Deletes a list of rows.</summary>
     /// <param name="rows">The rows to delete.</param>
@@ -124,6 +136,31 @@ public abstract class DbEntity<Row, Structure>
     public int Delete(List<Row> rows)
     {
         return DeleteAsync(rows).GetAwaiter().GetResult();
+    }
+
+    /// <summary>Deletes the rows matching a predicate asynchronously.</summary>
+    /// <param name="predicate">A function that creates the predicate for the table.</param>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>The number of rows affected.</returns>
+    public async Task<int> DeleteAsync(Func<Structure, string> predicate, CancellationToken ct = default)
+    {
+        return await this.Context.BuildQuery<Structure>((q, t) => q
+        .Config(() => { t.DisableAlias = true; })
+        .Append($"DELETE FROM {t}")
+        .Append($" WHERE {predicate(t)}")
+        ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Deletes the rows matching a predicate.</summary>
+    /// <param name="predicate">A function that creates the predicate for the table.</param>
+    /// <returns>The number of rows affected.</returns>
+    /// <remarks>
+    /// This method blocks on <see cref="DeleteAsync(Func{Structure, string}, CancellationToken)"/>.
+    /// Prefer the asynchronous version in asynchronous code.
+    /// </remarks>
+    public int Delete(Func<Structure, string> predicate)
+    {
+        return DeleteAsync(predicate).GetAwaiter().GetResult();
     }
 
     /// <summary>Deletes a list of rows asynchronously.</summary>
@@ -174,5 +211,17 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="parameters">Optional parameter values used by the predicate.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The selected rows.</returns>
-    public abstract Task<List<Row>> SelectAsync(Func<Structure, string> predicate, object parameters = null, CancellationToken ct = default);
+    public async Task<List<Row>> SelectAsync(Func<Structure, string> predicate, object parameters = null, CancellationToken ct = default)
+    {
+        var condition = "";
+
+        return await Context.BuildQuery<Structure>((q, e) => q
+            .Config(() => { condition = predicate(e); })
+            .Append($"SELECT {e.Star}")
+            .Append($"FROM {e}")
+            .AppendIf(!string.IsNullOrWhiteSpace(condition), $"WHERE {condition}")
+            )
+            .SetParameters(parameters)
+            .ExecuteAsync<Row>(ct).ConfigureAwait(false);
+    }
 }

@@ -32,6 +32,7 @@ public abstract class TableColumn
     /// <summary>Gets the SQL data type of this column.</summary>
     public string SqlType { get; }
 
+    /// <summary>Gets the length of the column.</summary>
     public long Length { get; }
 
     /// <summary>Converts a column to its SQL representation.</summary>
