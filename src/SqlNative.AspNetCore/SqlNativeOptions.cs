@@ -16,16 +16,6 @@ public class SqlNativeOptions
     public bool LogSqlCommands { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the maximum number of parameters allowed in one statement.
-    /// </summary>
-    public int MaxParametersPerStatement { get; set; } = 60_000;
-
-    /// <summary>
-    /// Gets or sets the maximum packet size used for database communication.
-    /// </summary>
-    public int MaxPacketSize { get; set; } = 1_000_000;
-
-    /// <summary>
     /// Gets or sets the connection string used by the registered database connection.
     /// </summary>
     public string ConnectionString { get; set; } = string.Empty;

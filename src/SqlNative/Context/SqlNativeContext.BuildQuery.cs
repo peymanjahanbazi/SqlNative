@@ -95,8 +95,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery = func(selectQuery);
@@ -119,8 +119,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -148,8 +148,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -181,8 +181,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -218,8 +218,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -259,8 +259,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -304,8 +304,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -353,8 +353,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -406,8 +406,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -463,8 +463,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -524,8 +524,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -589,8 +589,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -658,8 +658,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -731,8 +731,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -808,8 +808,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;
@@ -889,8 +889,8 @@ public abstract partial class SqlNativeContext
         var selectQuery = new Query
         {
             Connection = Connection,
-            GenerateModel = Config.IsDevelopMode,
-            LogSqlCommand = Config.IsDevelopMode || Config.LogSqlCommands,
+            GenerateModel = IsDevelopMode,
+            LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
         selectQuery.Connection = Connection;

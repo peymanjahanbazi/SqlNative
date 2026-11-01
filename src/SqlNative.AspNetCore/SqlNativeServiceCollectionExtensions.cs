@@ -25,13 +25,6 @@ public static class SqlNativeServiceCollectionExtensions
        where T : SqlNativeContext, new()
        where Connection : DbConnection, new()
     {
-        var config = new SqlNativeContextConfig()
-        {
-            IsDevelopMode = options.IsDevelopMode,
-            LogSqlCommands = options.LogSqlCommands,
-            MaxParametersPerStatement = options.MaxParametersPerStatement,
-            MaxPacketSize = options.MaxPacketSize
-        };
         services.AddScoped<T>((IServiceProvider s) =>
         {
             Connection? connection = new()
@@ -45,7 +38,8 @@ public static class SqlNativeServiceCollectionExtensions
                 var ctx = new T()
                 {
                     Connection = connection,
-                    Config = config
+                    IsDevelopMode = options.IsDevelopMode,
+                    LogSqlCommands = options.LogSqlCommands,
                 };
                 ctx.OwnsConnection = true;
                 // The host's logger, so executed commands go to the app's logging

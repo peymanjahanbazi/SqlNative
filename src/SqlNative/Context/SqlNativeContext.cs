@@ -26,27 +26,14 @@ public abstract partial class SqlNativeContext : IDisposable, IAsyncDisposable
     /// </summary>
     public ILogger? Logger { get; set; }
 
-    private SqlNativeContextConfig config = new()
-    {
-        IsDevelopMode = true,
-        LogSqlCommands = true,
-        MaxPacketSize = 1_000_000,
-        MaxParametersPerStatement = 60_000,
-    };
+    /// <summary>
+    /// Gets or sets whether development features such as model generation are enabled.
+    /// </summary>
+    public bool IsDevelopMode { get; set; }
 
     /// <summary>
-    /// Gets or sets the configuration for this context.
+    /// Gets or sets whether SQL commands are written to the logger,
+    /// or to the console when no logger is set.
     /// </summary>
-    public SqlNativeContextConfig Config
-    {
-        get
-        {
-            return config;
-        }
-        set
-        {
-            if (value == null) return;
-            config = value;
-        }
-    }
+    public bool LogSqlCommands { get; set; }
 }

@@ -8,8 +8,6 @@ namespace SqlNative.ModelGenerator.Generation.Oracle;
 
 internal sealed class OracleModelWriter : IModelWriter
 {
-    private const string DefaultParametersLiteral = "60_000";
-
     private static readonly HashSet<string> StructureReservedNames = new(StringComparer.Ordinal)
     {
         "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity",
@@ -580,34 +578,15 @@ internal sealed class OracleModelWriter : IModelWriter
         }
         else
         {
-            var pkStructure = primaryKey!.StructureName;
-            var parametersPerRow = SourceColumns(primaryKey!, updateColumns).Count;
-
             builder.AppendLine("        if (rows == null || rows.Count == 0)");
             builder.AppendLine("        {");
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine($"        var parametersPerStatement = ctx.Config?.MaxParametersPerStatement ?? {DefaultParametersLiteral};");
-            builder.AppendLine($"        if (parametersPerStatement <= 0) parametersPerStatement = {DefaultParametersLiteral};");
-            builder.AppendLine($"        var batchSize = Math.Max(1, parametersPerStatement / {parametersPerRow});");
-            builder.AppendLine();
-            builder.AppendLine("        var affected = 0;");
-            builder.AppendLine("        for (var offset = 0; offset < rows.Count; offset += batchSize)");
-            builder.AppendLine("        {");
-            builder.AppendLine("            affected += await UpdateBatchAsync(rows, offset, Math.Min(batchSize, rows.Count - offset), reload, ct).ConfigureAwait(false);");
-            builder.AppendLine("        }");
-            builder.AppendLine();
-            builder.AppendLine("        return affected;");
+            WriteUpdateRowsBody(builder, className, rowClassName, primaryKey!, updateColumns, helper, columns);
         }
 
         builder.AppendLine("    }");
-
-        if (canUpdate)
-        {
-            builder.AppendLine();
-            WriteUpdateBatch(builder, className, rowClassName, primaryKey!, updateColumns, helper, columns);
-        }
     }
 
     private static List<ColumnModel> SourceColumns(
@@ -631,7 +610,12 @@ internal sealed class OracleModelWriter : IModelWriter
         }
     }
 
-    private static void WriteUpdateBatch(
+    /// <summary>
+    /// Writes the body of the multi-row update used by
+    /// <c>UpdateAsync(List&lt;Row&gt;)</c>. The whole list is sent in a single statement,
+    /// so the caller is responsible for splitting it into chunks the database accepts.
+    /// </summary>
+    private static void WriteUpdateRowsBody(
         StringBuilder builder,
         string className,
         string rowClassName,
@@ -647,26 +631,24 @@ internal sealed class OracleModelWriter : IModelWriter
         for (var i = 0; i < sourceColumns.Count; i++)
         {
             var placeholder = "{" + "p" + i + "}";
-            firstSelectParts.Add(placeholder + " AS " + QuoteIdentifier(sourceColumns[i].Column.Name, helper));
+            firstSelectParts.Add(placeholder + " AS " + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(sourceColumns[i].Column.Name, helper)));
             nextSelectParts.Add(placeholder);
         }
 
         foreach (var column in updateColumns)
         {
-            setParts.Add("{" + "e." + column.StructureName + "} = t2." + QuoteIdentifier(column.Column.Name, helper));
+            setParts.Add("{" + "e." + column.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(column.Column.Name, helper)));
         }
 
-        var onClause = "{" + "e." + primaryKey.StructureName + "} = t2." + QuoteIdentifier(primaryKey.Column.Name, helper);
+        var onClause = "{" + "e." + primaryKey.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(primaryKey.Column.Name, helper));
 
-        builder.AppendLine($"    private async Task<int> UpdateBatchAsync(List<{rowClassName}> rows, int offset, int count, bool reload, CancellationToken ct)");
-        builder.AppendLine("    {");
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var selects = new List<string>();");
         builder.AppendLine("        var index = 1;");
         builder.AppendLine();
-        builder.AppendLine("        for (var i = 0; i < count; i++)");
+        builder.AppendLine("        for (var i = 0; i < rows.Count; i++)");
         builder.AppendLine("        {");
-        builder.AppendLine("            var item = rows[offset + i];");
+        builder.AppendLine("            var item = rows[i];");
         for (var i = 0; i < sourceColumns.Count; i++)
         {
             builder.AppendLine($"            var p{i} = \":p\" + index++;");
@@ -696,17 +678,16 @@ internal sealed class OracleModelWriter : IModelWriter
         builder.AppendLine("        if (reload)");
         builder.AppendLine("        {");
         builder.AppendLine("            var loaded = await query.Append(\" RETURNING *\").ExecuteAsync<" + rowClassName + ">(ct).ConfigureAwait(false);");
-        builder.AppendLine("            for (var i = 0; i < count && i < loaded.Count; i++)");
+        builder.AppendLine("            for (var i = 0; i < rows.Count && i < loaded.Count; i++)");
         builder.AppendLine("            {");
         builder.AppendLine("                var source2 = loaded[i];");
-        builder.AppendLine("                var item = rows[offset + i];");
+        builder.AppendLine("                var item = rows[i];");
         WriteFieldCopies(builder, "item", "source2", columns);
         builder.AppendLine("            }");
         builder.AppendLine("            return loaded.Count;");
         builder.AppendLine("        }");
         builder.AppendLine();
         builder.AppendLine("        return await query.ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
-        builder.AppendLine("    }");
     }
 
     private static string QuoteIdentifier(string name, IModelIdentifierHelper helper)

@@ -6,8 +6,6 @@ namespace SqlNative.ModelGenerator.Generation.MySql;
 
 internal sealed class MySqlModelWriter : IModelWriter
 {
-    private const string DefaultParametersLiteral = "60_000";
-
     private static readonly HashSet<string> StructureReservedNames = new(StringComparer.Ordinal)
     {
         "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity",
@@ -573,22 +571,13 @@ internal sealed class MySqlModelWriter : IModelWriter
             var pkStructure = primaryKey!.StructureName;
             var pkRowName = primaryKey!.RowName;
             var keyClrType = primaryKey!.ClrType;
-            var parametersPerRow = SourceColumns(primaryKey!, updateColumns).Count;
 
             builder.AppendLine("        if (rows == null || rows.Count == 0)");
             builder.AppendLine("        {");
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine($"        var parametersPerStatement = ctx.Config?.MaxParametersPerStatement ?? {DefaultParametersLiteral};");
-            builder.AppendLine($"        if (parametersPerStatement <= 0) parametersPerStatement = {DefaultParametersLiteral};");
-            builder.AppendLine($"        var batchSize = Math.Max(1, parametersPerStatement / {parametersPerRow});");
-            builder.AppendLine();
-            builder.AppendLine("        var affected = 0;");
-            builder.AppendLine("        for (var offset = 0; offset < rows.Count; offset += batchSize)");
-            builder.AppendLine("        {");
-            builder.AppendLine("            affected += await UpdateBatchAsync(rows, offset, Math.Min(batchSize, rows.Count - offset), ct).ConfigureAwait(false);");
-            builder.AppendLine("        }");
+            WriteUpdateRowsBody(builder, className, rowClassName, primaryKey!, updateColumns, helper);
             builder.AppendLine();
 
             builder.AppendLine("        if (reload)");
@@ -629,12 +618,6 @@ internal sealed class MySqlModelWriter : IModelWriter
         }
 
         builder.AppendLine("    }");
-
-        if (canUpdate)
-        {
-            builder.AppendLine();
-            WriteUpdateBatch(builder, className, rowClassName, primaryKey!, updateColumns, helper);
-        }
     }
 
     private static List<ColumnModel> SourceColumns(
@@ -658,7 +641,12 @@ internal sealed class MySqlModelWriter : IModelWriter
         }
     }
 
-    private static void WriteUpdateBatch(
+    /// <summary>
+    /// Writes the body of the multi-row update used by
+    /// <c>UpdateAsync(List&lt;Row&gt;)</c>. The whole list is sent in a single statement,
+    /// so the caller is responsible for splitting it into chunks the database accepts.
+    /// </summary>
+    private static void WriteUpdateRowsBody(
         StringBuilder builder,
         string className,
         string rowClassName,
@@ -675,15 +663,13 @@ internal sealed class MySqlModelWriter : IModelWriter
 
         var onClause = "{e." + primaryKey.StructureName + "} = t2." + helper.WrapObjectName(primaryKey.Column.Name);
 
-        builder.AppendLine($"    private async Task<int> UpdateBatchAsync(List<{rowClassName}> rows, int offset, int count, CancellationToken ct)");
-        builder.AppendLine("    {");
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var tuples = new List<string>();");
         builder.AppendLine("        var index = 1;");
         builder.AppendLine();
-        builder.AppendLine("        for (var i = 0; i < count; i++)");
+        builder.AppendLine("        for (var i = 0; i < rows.Count; i++)");
         builder.AppendLine("        {");
-        builder.AppendLine("            var item = rows[offset + i];");
+        builder.AppendLine("            var item = rows[i];");
         for (var i = 0; i < sourceColumns.Count; i++)
         {
             builder.AppendLine($"            var p{i} = \"@p\" + index++;");
@@ -709,14 +695,13 @@ internal sealed class MySqlModelWriter : IModelWriter
         builder.AppendLine();
         builder.AppendLine("        var valuesClause = string.Join(\" UNION ALL \", tuples);");
         builder.AppendLine();
-        builder.AppendLine($"        return await ctx.BuildQuery<{className}>((q, e) => q");
+        builder.AppendLine($"        var affected = await ctx.BuildQuery<{className}>((q, e) => q");
         builder.AppendLine("            .Config(() => e.Alias = \"t1\")");
         builder.AppendLine("            .Append($\"UPDATE {e}\")");
         builder.AppendLine($"            .Append($\"INNER JOIN (\" + valuesClause + $\") AS t2 ON " + onClause + "\")");
         builder.AppendLine("            .Append($\"SET " + string.Join(", ", setParts) + "\")");
         builder.AppendLine("            .SetParameters(parameters)");
         builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
-        builder.AppendLine("    }");
     }
 
     private static string BuildQuatedName(TableInfo table, IModelIdentifierHelper helper)
