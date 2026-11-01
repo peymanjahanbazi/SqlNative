@@ -44,7 +44,10 @@ internal sealed class MsSqlModelWriter : IModelWriter
         var helper = _helper;
 
         var columns = BuildColumns(table, className, helper);
-        var primaryKey = columns.FirstOrDefault(c => c.Column.IsPrimaryKey);
+        var primaryKeys = columns
+            .Where(c => c.Column.IsPrimaryKey)
+            .OrderBy(c => c.Column.PrimaryKeyOrdinal)
+            .ToArray();
         var rowClassName = className + "Row";
 
         var builder = new StringBuilder();
@@ -59,11 +62,11 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine($"namespace {packageNamespace};");
         builder.AppendLine();
 
-        WriteStructure(builder, table, className, columns, primaryKey, helper);
+        WriteStructure(builder, table, className, columns, helper);
         builder.AppendLine();
         WriteRow(builder, rowClassName, columns, helper);
         builder.AppendLine();
-        WriteEntity(builder, table, className, entityClassName, rowClassName, contextName, columns, primaryKey, helper);
+        WriteEntity(builder, table, className, entityClassName, rowClassName, contextName, columns, primaryKeys, helper);
 
         return builder.ToString();
     }
@@ -97,7 +100,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
         TableInfo table,
         string className,
         IReadOnlyList<ColumnModel> columns,
-        ColumnModel? primaryKey,
         IModelIdentifierHelper helper)
     {
         builder.AppendLine($"public partial class {className} : MsSqlTableStructure");
@@ -231,7 +233,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         string rowClassName,
         string contextName,
         IReadOnlyList<ColumnModel> columns,
-        ColumnModel? primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IModelIdentifierHelper helper)
     {
         // Views are treated as read-only: only SELECT is implemented.
@@ -254,11 +256,11 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("    public override SqlNativeContext Context => ctx;");
         builder.AppendLine();
 
-        WriteDelete(builder, className, rowClassName, primaryKey, isView);
+        WriteDelete(builder, className, rowClassName, primaryKeys, helper, isView);
         builder.AppendLine();
-        WriteInsert(builder, className, rowClassName, primaryKey, columns, isView);
+        WriteInsert(builder, className, rowClassName, primaryKeys, columns, helper, isView);
         builder.AppendLine();
-        WriteUpdate(builder, className, rowClassName, primaryKey, updateColumns, helper, columns, isView);
+        WriteUpdate(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns, isView);
 
         builder.AppendLine("}");
     }
@@ -267,10 +269,11 @@ internal sealed class MsSqlModelWriter : IModelWriter
             StringBuilder builder,
             string className,
             string rowClassName,
-            ColumnModel? primaryKey,
+            IReadOnlyList<ColumnModel> primaryKeys,
+            IModelIdentifierHelper helper,
             bool isView = false)
     {
-        var hasPrimaryKey = primaryKey is not null && !isView;
+        var hasPrimaryKey = primaryKeys.Count > 0 && !isView;
         var throwMessage = isView
             ? "throw new NotImplementedException(\"DeleteAsync is not supported: the object is a view and is read-only.\");"
             : "throw new NotImplementedException();";
@@ -290,15 +293,39 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("        var index = 1;");
             builder.AppendLine("        foreach (var item in rows)");
             builder.AppendLine("        {");
-            builder.AppendLine("            var p = \"@p\" + index++;");
-            builder.AppendLine($"            parameters[p] = item.{primaryKey!.RowName};");
-            builder.AppendLine("            keys.Add(p);");
+            if (primaryKeys.Count == 1)
+            {
+                builder.AppendLine("            var p = \"@p\" + index++;");
+                builder.AppendLine($"            parameters[p] = item.{primaryKeys[0].RowName};");
+                builder.AppendLine("            keys.Add(p);");
+            }
+            else
+            {
+                builder.AppendLine("            var conditions = new List<string>();");
+                builder.AppendLine("            var conditionIndex = 0;");
+                foreach (var key in primaryKeys)
+                {
+                    builder.AppendLine($"            var p{key.StructureName} = \"@p\" + (index + conditionIndex++);");
+                    builder.AppendLine($"            parameters[p{key.StructureName}] = item.{key.RowName};");
+                    var quotedKeyName = helper.WrapObjectName(key.Column.Name);
+                    builder.AppendLine($"            conditions.Add(\"{quotedKeyName.Replace("\"", "\\\"")}\" + \" = \" + p{key.StructureName});");
+                }
+                builder.AppendLine("            index += conditionIndex;");
+                builder.AppendLine("            keys.Add(\"(\" + string.Join(\" AND \", conditions) + \")\");");
+            }
             builder.AppendLine("        }");
             builder.AppendLine();
             builder.AppendLine($"        return Context.BuildQuery<{className}>((q, e) => q");
             builder.AppendLine("            .Config(() => e.DisableAlias = true)");
             builder.AppendLine("            .Append($\"DELETE FROM {e}\")");
-            builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKey.StructureName}}} IN (\" + string.Join(\", \", keys) + \")\")");
+            if (primaryKeys.Count == 1)
+            {
+                builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKeys[0].StructureName}}} IN (\" + string.Join(\", \", keys) + \")\")");
+            }
+            else
+            {
+                builder.AppendLine("            .Append($\"WHERE \" + string.Join(\" OR \", keys))");
+            }
             builder.AppendLine("            .SetParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
@@ -314,11 +341,12 @@ internal sealed class MsSqlModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel? primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> columns,
+        IModelIdentifierHelper helper,
         bool isView = false)
     {
-        var hasPrimaryKey = primaryKey is not null && !isView;
+        var hasPrimaryKey = primaryKeys.Count > 0 && !isView;
 
         var allColumns = columns.ToArray();
         var columnsWithoutPk = columns
@@ -441,13 +469,13 @@ internal sealed class MsSqlModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel? primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns,
         IModelIdentifierHelper helper,
         IReadOnlyList<ColumnModel> columns,
         bool isView = false)
     {
-        var canUpdate = primaryKey is not null && updateColumns.Count > 0 && !isView;
+        var canUpdate = primaryKeys.Count > 0 && updateColumns.Count > 0 && !isView;
         var throwMessage = isView
             ? "throw new NotImplementedException(\"UpdateAsync is not supported: the object is a view and is read-only.\");"
             : "throw new NotImplementedException();";
@@ -465,17 +493,18 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            WriteUpdateRowsBody(builder, className, rowClassName, primaryKey!, updateColumns, helper, columns);
+            WriteUpdateRowsBody(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns);
         }
 
         builder.AppendLine("    }");
     }
 
     private static List<ColumnModel> SourceColumns(
-        ColumnModel primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns)
     {
-        var columns = new List<ColumnModel>(updateColumns.Count + 1) { primaryKey };
+        var columns = new List<ColumnModel>(primaryKeys.Count + updateColumns.Count);
+        columns.AddRange(primaryKeys);
         columns.AddRange(updateColumns);
         return columns;
     }
@@ -501,12 +530,12 @@ internal sealed class MsSqlModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns,
         IModelIdentifierHelper helper,
         IReadOnlyList<ColumnModel> columns)
     {
-        var sourceColumns = SourceColumns(primaryKey, updateColumns);
+        var sourceColumns = SourceColumns(primaryKeys, updateColumns);
         var firstSelectParts = new List<string>(sourceColumns.Count);
         var nextSelectParts = new List<string>(sourceColumns.Count);
         var setParts = new List<string>(updateColumns.Count);
@@ -522,7 +551,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             setParts.Add("{" + "e." + column.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(helper.WrapObjectName(column.Column.Name)));
         }
 
-        var onClause = "{" + "e." + primaryKey.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(helper.WrapObjectName(primaryKey.Column.Name));
+        var onClause = string.Join(" AND ", primaryKeys.Select(k => "{" + "e." + k.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(helper.WrapObjectName(k.Column.Name))));
 
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var selects = new List<string>();");

@@ -44,7 +44,10 @@ internal sealed class OracleModelWriter : IModelWriter
         var helper = _helper;
 
         var columns = BuildColumns(table, className, helper);
-        var primaryKey = columns.FirstOrDefault(c => c.Column.IsPrimaryKey);
+        var primaryKeys = columns
+            .Where(c => c.Column.IsPrimaryKey)
+            .OrderBy(c => c.Column.PrimaryKeyOrdinal)
+            .ToArray();
         var rowClassName = className + "Row";
 
         var builder = new StringBuilder();
@@ -59,11 +62,11 @@ internal sealed class OracleModelWriter : IModelWriter
         builder.AppendLine($"namespace {packageNamespace};");
         builder.AppendLine();
 
-        WriteStructure(builder, table, className, columns, primaryKey, helper);
+        WriteStructure(builder, table, className, columns, helper);
         builder.AppendLine();
         WriteRow(builder, rowClassName, columns, helper);
         builder.AppendLine();
-        WriteEntity(builder, className, entityClassName, rowClassName, contextName, columns, primaryKey, helper);
+        WriteEntity(builder, className, entityClassName, rowClassName, contextName, columns, primaryKeys, helper);
 
         return builder.ToString();
     }
@@ -97,7 +100,6 @@ internal sealed class OracleModelWriter : IModelWriter
         TableInfo table,
         string className,
         IReadOnlyList<ColumnModel> columns,
-        ColumnModel? primaryKey,
         IModelIdentifierHelper helper)
     {
         builder.AppendLine($"public partial class {className} : OracleTableStructure");
@@ -230,7 +232,7 @@ internal sealed class OracleModelWriter : IModelWriter
         string rowClassName,
         string contextName,
         IReadOnlyList<ColumnModel> columns,
-        ColumnModel? primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IModelIdentifierHelper helper)
     {
         var updateColumns = columns
@@ -250,11 +252,11 @@ internal sealed class OracleModelWriter : IModelWriter
         builder.AppendLine("    public override SqlNativeContext Context => ctx;");
         builder.AppendLine();
 
-        WriteDelete(builder, className, rowClassName, primaryKey);
+        WriteDelete(builder, className, rowClassName, primaryKeys, helper);
         builder.AppendLine();
-        WriteInsert(builder, className, rowClassName, primaryKey, columns);
+        WriteInsert(builder, className, rowClassName, primaryKeys, columns, helper);
         builder.AppendLine();
-        WriteUpdate(builder, className, rowClassName, primaryKey, updateColumns, helper, columns);
+        WriteUpdate(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns);
 
         builder.AppendLine("}");
     }
@@ -263,9 +265,10 @@ internal sealed class OracleModelWriter : IModelWriter
             StringBuilder builder,
             string className,
             string rowClassName,
-            ColumnModel? primaryKey)
+            IReadOnlyList<ColumnModel> primaryKeys,
+            IModelIdentifierHelper helper)
     {
-        var hasPrimaryKey = primaryKey is not null;
+        var hasPrimaryKey = primaryKeys.Count > 0;
 
 
         builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
@@ -282,15 +285,39 @@ internal sealed class OracleModelWriter : IModelWriter
             builder.AppendLine("        var index = 1;");
             builder.AppendLine("        foreach (var item in rows)");
             builder.AppendLine("        {");
-            builder.AppendLine("            var p = \":p\" + index++;");
-            builder.AppendLine($"            parameters[p] = item.{primaryKey!.RowName};");
-            builder.AppendLine("            keys.Add(p);");
+            if (primaryKeys.Count == 1)
+            {
+                builder.AppendLine("            var p = \":p\" + index++;");
+                builder.AppendLine($"            parameters[p] = item.{primaryKeys[0].RowName};");
+                builder.AppendLine("            keys.Add(p);");
+            }
+            else
+            {
+                builder.AppendLine("            var conditions = new List<string>();");
+                builder.AppendLine("            var conditionIndex = 0;");
+                foreach (var key in primaryKeys)
+                {
+                    builder.AppendLine($"            var p{key.StructureName} = \":p\" + (index + conditionIndex++);");
+                    builder.AppendLine($"            parameters[p{key.StructureName}] = item.{key.RowName};");
+                    var quotedKeyName = QuoteIdentifier(key.Column.Name, helper);
+                    builder.AppendLine($"            conditions.Add(\"{quotedKeyName.Replace("\"", "\\\"")}\" + \" = \" + p{key.StructureName});");
+                }
+                builder.AppendLine("            index += conditionIndex;");
+                builder.AppendLine("            keys.Add(\"(\" + string.Join(\" AND \", conditions) + \")\");");
+            }
             builder.AppendLine("        }");
             builder.AppendLine();
             builder.AppendLine($"        return Context.BuildQuery<{className}>((q, e) => q");
             builder.AppendLine("            .Config(() => e.DisableAlias = true)");
             builder.AppendLine("            .Append($\"DELETE FROM {e}\")");
-            builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKey.StructureName}}} IN (\" + string.Join(\", \", keys) + \")\")");
+            if (primaryKeys.Count == 1)
+            {
+                builder.AppendLine($"            .Append($\"WHERE {{e.{primaryKeys[0].StructureName}}} IN (\" + string.Join(\", \", keys) + \")\")");
+            }
+            else
+            {
+                builder.AppendLine("            .Append($\"WHERE \" + string.Join(\" OR \", keys))");
+            }
             builder.AppendLine("            .SetParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
@@ -306,10 +333,11 @@ internal sealed class OracleModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel? primaryKey,
-        IReadOnlyList<ColumnModel> columns)
+        IReadOnlyList<ColumnModel> primaryKeys,
+        IReadOnlyList<ColumnModel> columns,
+        IModelIdentifierHelper helper)
     {
-        var hasPrimaryKey = primaryKey is not null;
+        var hasPrimaryKey = primaryKeys.Count > 0;
 
         var allColumns = columns.ToArray();
         var columnsWithoutPk = columns
@@ -341,12 +369,17 @@ internal sealed class OracleModelWriter : IModelWriter
                 builder.AppendLine();
             }
 
-            var pkIsAutoIncrement = primaryKey!.Column.IsAutoIncrement;
-            if (hasPrimaryKey && pkIsAutoIncrement)
+            var autoIncrementKeyCount = primaryKeys.Count(c => c.Column.IsAutoIncrement);
+            if (hasPrimaryKey && autoIncrementKeyCount > 0 && autoIncrementKeyCount != primaryKeys.Count)
+            {
+                // A composite key cannot mix generated and supplied columns.
+                builder.AppendLine("        throw new NotImplementedException(\"Cannot insert rows: the composite primary key mixes auto-generated and supplied columns.\");");
+            }
+            else if (hasPrimaryKey && autoIncrementKeyCount == primaryKeys.Count)
             {
                 // The primary key is generated by the database, so every row is inserted on its
                 // own and its key is read back with currval right after the insert.
-                var pkStructure = primaryKey!.StructureName;
+                var pkStructure = primaryKeys[0].StructureName;
                 var withoutPkColumnsText = string.Join(", ", columnsWithoutPk.Select(c => "{e." + c.StructureName + "}"));
                 var withoutPkValues = string.Join(", ", columnsWithoutPk.Select(c => ":" + c.RowName));
                 var withoutPkParameters = string.Join(", ", columnsWithoutPk.Select(c => c.RowName + " = item." + c.RowName));
@@ -435,7 +468,7 @@ internal sealed class OracleModelWriter : IModelWriter
 
                 if (hasPrimaryKey)
                 {
-                    var pkStructure = primaryKey!.StructureName;
+                    var pkStructure = primaryKeys[0].StructureName;
                     builder.AppendLine("        if (loadRecord)");
                     builder.AppendLine("        {");
                     builder.AppendLine("            var reloadParameters = new Dictionary<string, object?>();");
@@ -443,27 +476,70 @@ internal sealed class OracleModelWriter : IModelWriter
                     builder.AppendLine("            var reloadIndex = 1;");
                     builder.AppendLine("            foreach (var item in rows)");
                     builder.AppendLine("            {");
-                    builder.AppendLine("                var p = \":p\" + reloadIndex++;");
-                    builder.AppendLine($"                reloadParameters[p] = item.{primaryKey!.RowName};");
-                    builder.AppendLine("                reloadParts.Add(p);");
+                    if (primaryKeys.Count == 1)
+                    {
+                        builder.AppendLine("                var p = \":p\" + reloadIndex++;");
+                        builder.AppendLine($"                reloadParameters[p] = item.{primaryKeys[0].RowName};");
+                        builder.AppendLine("                reloadParts.Add(p);");
+                    }
+                    else
+                    {
+                        builder.AppendLine("                var conditions = new List<string>();");
+                        builder.AppendLine("                var conditionIndex = 0;");
+                        foreach (var key in primaryKeys)
+                        {
+                            builder.AppendLine($"                var p{key.StructureName} = \":p\" + (reloadIndex + conditionIndex++);");
+                            builder.AppendLine($"                parameters[p{key.StructureName}] = item.{key.RowName};");
+                            var quotedKeyName = QuoteIdentifier(key.Column.Name, helper);
+                            builder.AppendLine($"                conditions.Add(\"{quotedKeyName.Replace("\"", "\\\"")}\" + \" = \" + p{key.StructureName});");
+                        }
+                        builder.AppendLine("                reloadIndex += conditionIndex;");
+                        builder.AppendLine("                    reloadParts.Add(\"(\" + string.Join(\" AND \", conditions) + \")\");");
+                    }
                     builder.AppendLine("            }");
                     builder.AppendLine();
                     builder.AppendLine($"            var loaded = await Context.BuildQuery<{className}>((q, e) => q");
                     builder.AppendLine("                .Append($\"SELECT {e.Star}\")");
                     builder.AppendLine("                .Append($\"FROM {e}\")");
-                    builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} IN (\" + string.Join(\", \", reloadParts) + \")\")");
+                    if (primaryKeys.Count == 1)
+                    {
+                        builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} IN (\" + string.Join(\", \", reloadParts) + \")\")");
+                    }
+                    else
+                    {
+                        builder.AppendLine("                .Append($\"WHERE \" + string.Join(\" OR \", reloadParts))");
+                    }
                     builder.AppendLine("                .SetParameters(reloadParameters)");
                     builder.AppendLine($"            ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                     builder.AppendLine();
-                    builder.AppendLine($"            var byKey = new Dictionary<{primaryKey!.ClrType}, {rowClassName}>(rows.Count);");
-                    builder.AppendLine("            foreach (var src in loaded)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                byKey[src.{primaryKey!.RowName}] = src;");
-                    builder.AppendLine("            }");
-                    builder.AppendLine();
-                    builder.AppendLine("            foreach (var item in rows)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                if (byKey.TryGetValue(item.{primaryKey!.RowName}, out var source))");
+                    var isSingleKey = primaryKeys.Count == 1;
+                    var keyType = isSingleKey ? primaryKeys[0].ClrType : string.Join(", ", primaryKeys.Select(k => k.ClrType));
+                    var itemKey = string.Join(", ", primaryKeys.Select(k => "item." + k.RowName));
+                    var srcKey = string.Join(", ", primaryKeys.Select(k => "src." + k.RowName));
+                    if (isSingleKey)
+                    {
+                        builder.AppendLine($"            var byKey = new Dictionary<{keyType}, {rowClassName}>(rows.Count);");
+                        builder.AppendLine("            foreach (var src in loaded)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                byKey[src.{primaryKeys[0].RowName}] = src;");
+                        builder.AppendLine("            }");
+                        builder.AppendLine();
+                        builder.AppendLine("            foreach (var item in rows)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                if (byKey.TryGetValue(item.{primaryKeys[0].RowName}, out var source))");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"            var byKey = new Dictionary<({keyType}), {rowClassName}>(rows.Count);");
+                        builder.AppendLine("            foreach (var src in loaded)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                byKey[({srcKey})] = src;");
+                        builder.AppendLine("            }");
+                        builder.AppendLine();
+                        builder.AppendLine("            foreach (var item in rows)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                if (byKey.TryGetValue(({itemKey}), out var source))");
+                    }
                     builder.AppendLine("                {");
                     WriteFieldCopies(builder, "item", "source", columns);
                     builder.AppendLine("                }");
@@ -482,12 +558,12 @@ internal sealed class OracleModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel? primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns,
         IModelIdentifierHelper helper,
         IReadOnlyList<ColumnModel> columns)
     {
-        var canUpdate = primaryKey is not null && updateColumns.Count > 0;
+        var canUpdate = primaryKeys.Count > 0 && updateColumns.Count > 0;
 
 
         builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, bool reload = false, CancellationToken ct = default)");
@@ -503,17 +579,18 @@ internal sealed class OracleModelWriter : IModelWriter
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            WriteUpdateRowsBody(builder, className, rowClassName, primaryKey!, updateColumns, helper, columns);
+            WriteUpdateRowsBody(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns);
         }
 
         builder.AppendLine("    }");
     }
 
     private static List<ColumnModel> SourceColumns(
-        ColumnModel primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns)
     {
-        var columns = new List<ColumnModel>(updateColumns.Count + 1) { primaryKey };
+        var columns = new List<ColumnModel>(primaryKeys.Count + updateColumns.Count);
+        columns.AddRange(primaryKeys);
         columns.AddRange(updateColumns);
         return columns;
     }
@@ -539,12 +616,12 @@ internal sealed class OracleModelWriter : IModelWriter
         StringBuilder builder,
         string className,
         string rowClassName,
-        ColumnModel primaryKey,
+        IReadOnlyList<ColumnModel> primaryKeys,
         IReadOnlyList<ColumnModel> updateColumns,
         IModelIdentifierHelper helper,
         IReadOnlyList<ColumnModel> columns)
     {
-        var sourceColumns = SourceColumns(primaryKey, updateColumns);
+        var sourceColumns = SourceColumns(primaryKeys, updateColumns);
         var firstSelectParts = new List<string>(sourceColumns.Count);
         var nextSelectParts = new List<string>(sourceColumns.Count);
         var setParts = new List<string>(updateColumns.Count);
@@ -560,7 +637,7 @@ internal sealed class OracleModelWriter : IModelWriter
             setParts.Add("{" + "e." + column.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(column.Column.Name, helper)));
         }
 
-        var onClause = "{" + "e." + primaryKey.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(primaryKey.Column.Name, helper));
+        var onClause = string.Join(" AND ", primaryKeys.Select(k => "{" + "e." + k.StructureName + "} = t2." + helper.EscapeCsStringLiteralNoQuote(QuoteIdentifier(k.Column.Name, helper))));
 
         builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
         builder.AppendLine("        var selects = new List<string>();");

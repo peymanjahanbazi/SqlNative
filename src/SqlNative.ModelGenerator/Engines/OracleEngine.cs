@@ -128,13 +128,13 @@ internal sealed class OracleEngine : IDatabaseEngine
         CancellationToken cancellationToken)
     {
         var columns = new List<ColumnInfo>();
-        var primaryKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var primaryKeys = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
             await using var pkCommand = connection.CreateCommand();
             pkCommand.CommandText = """
-                SELECT acc.column_name
+                SELECT acc.column_name, acc.position
                 FROM all_cons_columns acc
                 JOIN all_constraints ac
                   ON acc.owner = ac.owner
@@ -143,6 +143,7 @@ internal sealed class OracleEngine : IDatabaseEngine
                 WHERE ac.owner = :owner
                   AND ac.table_name = :table_name
                   AND ac.constraint_type = 'P'
+                ORDER BY acc.position
                 """;
             AddBindParameter(pkCommand, "owner", schema);
             AddBindParameter(pkCommand, "table_name", tableName);
@@ -150,7 +151,7 @@ internal sealed class OracleEngine : IDatabaseEngine
             await using var pkReader = await pkCommand.ExecuteReaderAsync(cancellationToken);
             while (await pkReader.ReadAsync(cancellationToken))
             {
-                primaryKeys.Add(pkReader.GetString(0));
+                primaryKeys.Add(pkReader.GetString(0), pkReader.GetInt32(1));
             }
         }
         catch (OracleException ex)
@@ -184,7 +185,7 @@ internal sealed class OracleEngine : IDatabaseEngine
                 var length = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);
 
                 var isNullable = string.Equals(nullableText, "Y", StringComparison.OrdinalIgnoreCase);
-                var isPrimaryKey = primaryKeys.Contains(columnName);
+                var isPrimaryKey = primaryKeys.ContainsKey(columnName);
 
                 columns.Add(new ColumnInfo(
                     Name: columnName,
@@ -192,7 +193,8 @@ internal sealed class OracleEngine : IDatabaseEngine
                     IsNullable: isNullable,
                     IsPrimaryKey: isPrimaryKey,
                     IsAutoIncrement: false,
-                    Length: length));
+                    Length: length,
+                    PrimaryKeyOrdinal: isPrimaryKey ? primaryKeys[columnName] : -1));
             }
         }
         catch (OracleException ex)

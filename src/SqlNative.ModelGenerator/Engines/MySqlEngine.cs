@@ -84,17 +84,20 @@ internal sealed partial class MySqlEngine : IDatabaseEngine
         await using var command = connection.CreateCommand();
         command.CommandText = $"DESCRIBE `{tableName.Replace("`", "``")}`;";
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var primaryKeyOrdinal = 0;
         while (await reader.ReadAsync(cancellationToken))
         {
             var columnName = reader.GetString(0);
             lengths.TryGetValue(columnName, out var length);
+            var isPrimaryKey = string.Equals(reader.GetString(3), "PRI", StringComparison.OrdinalIgnoreCase);
             columns.Add(new ColumnInfo(
                 Name: columnName,
                 RawType: reader.GetString(1),
                 IsNullable: string.Equals(reader.GetString(2), "YES", StringComparison.OrdinalIgnoreCase),
-                IsPrimaryKey: string.Equals(reader.GetString(3), "PRI", StringComparison.OrdinalIgnoreCase),
+                IsPrimaryKey: isPrimaryKey,
                 IsAutoIncrement: GetSafeString(reader, 5).Contains("auto_increment", StringComparison.OrdinalIgnoreCase),
-                Length: length));
+                Length: length,
+                PrimaryKeyOrdinal: isPrimaryKey ? primaryKeyOrdinal++ : -1));
         }
 
         return new TableInfo(Schema: null, Name: tableName, Columns: columns);

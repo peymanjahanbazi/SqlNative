@@ -50,7 +50,6 @@ internal sealed class PostgresEngine : IDatabaseEngine
     private static async Task<TableInfo> DescribeTableAsync(NpgsqlConnection connection, string schema, string tableName, CancellationToken cancellationToken)
     {
         var columns = new List<ColumnInfo>();
-        HashSet<string> primaryKeys = new(StringComparer.OrdinalIgnoreCase);
         await using (var command = connection.CreateCommand())
         {
             command.CommandText = """
@@ -69,7 +68,18 @@ internal sealed class PostgresEngine : IDatabaseEngine
                              AND tc.table_schema = @schema
                              AND tc.table_name = @table
                              AND kcu.column_name = c.column_name
-                       ) AS is_primary_key
+                       ) AS is_primary_key,
+                       COALESCE((
+                           SELECT kcu2.ordinal_position
+                           FROM information_schema.table_constraints tc2
+                           JOIN information_schema.key_column_usage kcu2
+                             ON tc2.constraint_name = kcu2.constraint_name
+                            AND tc2.table_schema = kcu2.table_schema
+                           WHERE tc2.constraint_type = 'PRIMARY KEY'
+                             AND tc2.table_schema = @schema
+                             AND tc2.table_name = @table
+                             AND kcu2.column_name = c.column_name
+                       ), -1) AS primary_key_ordinal
                 FROM information_schema.columns c
                 WHERE c.table_schema = @schema
                   AND c.table_name = @table
@@ -87,6 +97,7 @@ internal sealed class PostgresEngine : IDatabaseEngine
                 var isIdentity = string.Equals(reader.GetString(3), "YES", StringComparison.OrdinalIgnoreCase);
                 var length = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
                 var isPrimaryKey = reader.GetBoolean(5);
+                var primaryKeyOrdinal = reader.IsDBNull(6) ? -1 : reader.GetInt32(6);
 
                 columns.Add(new ColumnInfo(
                     Name: columnName,
@@ -94,12 +105,8 @@ internal sealed class PostgresEngine : IDatabaseEngine
                     IsNullable: isNullable,
                     IsPrimaryKey: isPrimaryKey,
                     IsAutoIncrement: isIdentity,
-                    Length: length));
-
-                if (isPrimaryKey)
-                {
-                    primaryKeys.Add(columnName);
-                }
+                    Length: length,
+                    PrimaryKeyOrdinal: primaryKeyOrdinal));
             }
         }
 

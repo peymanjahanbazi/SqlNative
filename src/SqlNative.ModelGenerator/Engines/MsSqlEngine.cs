@@ -61,7 +61,7 @@ internal sealed class MsSqlEngine : IDatabaseEngine
         CancellationToken cancellationToken)
     {
         var columns = new List<ColumnInfo>();
-        var primaryKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var primaryKeys = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var lengths = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
 
         // Views cannot have primary key constraints, so the lookup is skipped for them.
@@ -70,14 +70,15 @@ internal sealed class MsSqlEngine : IDatabaseEngine
             await using (var pkCommand = connection.CreateCommand())
             {
                 pkCommand.CommandText = """
-                    SELECT c.name AS column_name
+                    SELECT c.name AS column_name, ic.key_ordinal
                     FROM sys.indexes i
                     INNER JOIN sys.index_columns ic
                         ON i.object_id = ic.object_id AND i.index_id = ic.index_id
                     INNER JOIN sys.columns c
                         ON ic.object_id = c.object_id AND ic.column_id = c.column_id
                     WHERE i.is_primary_key = 1
-                      AND i.object_id = OBJECT_ID(@fullName);
+                      AND i.object_id = OBJECT_ID(@fullName)
+                    ORDER BY ic.key_ordinal;
                     """;
                 var schemaQualified = $"[{schema}].[{tableName}]";
                 AddParameter(pkCommand, "@fullName", schemaQualified);
@@ -85,7 +86,7 @@ internal sealed class MsSqlEngine : IDatabaseEngine
                 await using var pkReader = await pkCommand.ExecuteReaderAsync(cancellationToken);
                 while (await pkReader.ReadAsync(cancellationToken))
                 {
-                    primaryKeys.Add(pkReader.GetString(0));
+                    primaryKeys.Add(pkReader.GetString(0), Convert.ToInt32(pkReader.GetValue(1)));
                 }
             }
         }
@@ -131,7 +132,7 @@ internal sealed class MsSqlEngine : IDatabaseEngine
                 var isNullable = reader.GetBoolean(2);
                 var isIdentity = reader.GetBoolean(3);
                 var isComputed = reader.GetBoolean(4);
-                var isPrimaryKey = primaryKeys.Contains(columnName);
+                var isPrimaryKey = primaryKeys.ContainsKey(columnName);
                 lengths.TryGetValue(columnName, out var length);
 
                 columns.Add(new ColumnInfo(
@@ -140,7 +141,8 @@ internal sealed class MsSqlEngine : IDatabaseEngine
                     IsNullable: isNullable && !isComputed,
                     IsPrimaryKey: isPrimaryKey,
                     IsAutoIncrement: isIdentity,
-                    Length: length));
+                    Length: length,
+                    PrimaryKeyOrdinal: isPrimaryKey ? primaryKeys[columnName] : -1));
             }
         }
 
