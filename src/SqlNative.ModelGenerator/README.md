@@ -1,6 +1,6 @@
 # SqlNative.ModelGenerator
 
-Code generator for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD entity, and a context, for every table in the schema. For SQL Server, database views are generated as well, as read-only models.
+Code generator for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. Point it at a live database and it writes a complete, strongly-typed data-access layer: a table class, a row class, a CRUD repository, and a context, for every table in the schema. For SQL Server, database views are generated as well, as read-only models.
 
 Supports **SQL Server**, **MySQL**, **PostgreSQL** and **Oracle**. The generated code targets the core `SqlNative` package and compiles against any of its four dialect base classes.
 
@@ -16,7 +16,7 @@ Supports **SQL Server**, **MySQL**, **PostgreSQL** and **Oracle**. The generated
 - [The three classes generated per table](#the-three-classes-generated-per-table)
   - [1. The table structure](#1-the-table-structure)
   - [2. The row model](#2-the-row-model)
-  - [3. The CRUD entity](#3-the-crud-entity)
+  - [3. The CRUD repository](#3-the-crud-repository)
 - [The context class](#the-context-class)
 - [Dialect differences](#dialect-differences)
 - [Known issues](#known-issues)
@@ -58,7 +58,7 @@ sqlnative-gen \
   --context ShopContext
 ```
 
-Writes `Shop.Models.Countries`, `Shop.Models.CountriesRow`, `Shop.Models.CountriesEntity` and `Shop.Models.ShopContext`. The table class extends `MySqlTableStructure`; the row maps `Id` as `long` (from `bigint(20)`).
+Writes `Shop.Models.Countries`, `Shop.Models.CountriesRow`, `Shop.Models.CountriesRepository` and `Shop.Models.ShopContext`. The table class extends `MySqlTableStructure`; the row maps `Id` as `long` (from `bigint(20)`).
 
 ### SQL Server
 
@@ -71,7 +71,7 @@ sqlnative-gen \
   --context ShopContext
 ```
 
-Writes `Shop.Models.DboOrders` (schema `dbo` + table `Orders`), `Shop.Models.DboOrdersRow`, `Shop.Models.DboOrdersEntity` and `Shop.Models.ShopContext`. The table class extends `MsSqlTableStructure`, carries a `Schema` property, and the row reload uses `OUTPUT INSERTED.*`.
+Writes `Shop.Models.DboOrders` (schema `dbo` + table `Orders`), `Shop.Models.DboOrdersRow`, `Shop.Models.DboOrdersRepository` and `Shop.Models.ShopContext`. The table class extends `MsSqlTableStructure`, carries a `Schema` property, and the row reload uses `OUTPUT INSERTED.*`.
 
 ### PostgreSQL
 
@@ -97,7 +97,7 @@ sqlnative-gen \
   --context Sch1Context
 ```
 
-Writes `Shop.Models.Orders` — Oracle tables are **not** schema-prefixed in the class name — plus `OrdersRow`, `OrdersEntity` and `Sch1Context`. The table class extends `OracleTableStructure`. Oracle is the one dialect that uses `:p1`-style parameter names instead of `@p1`, and it reads only the tables owned by the connected user.
+Writes `Shop.Models.Orders` — Oracle tables are **not** schema-prefixed in the class name — plus `OrdersRow`, `OrdersRepository` and `Sch1Context`. The table class extends `OracleTableStructure`. Oracle is the one dialect that uses `:p1`-style parameter names instead of `@p1`, and it reads only the tables owned by the connected user.
 
 ---
 
@@ -164,8 +164,8 @@ For a database with N tables you get N + 1 files:
 
 ```
 Models/
-  Countries.cs        -> Countries, CountriesRow, CountriesEntity
-  Orders.cs           -> Orders, OrdersRow, OrdersEntity
+  Countries.cs        -> Countries, CountriesRow, CountriesRepository
+  Orders.cs           -> Orders, OrdersRow, OrdersRepository
   ShopContext.cs      -> ShopContext
 ```
 
@@ -183,7 +183,7 @@ All three classes for a table live in one file, named after the table class. The
 | Oracle table class | `<Table>`, sanitised to PascalCase | `NEWTABLE` → `Newtable` |
 | Column property | `<Column>`, sanitised to PascalCase | `CountryCode` → `CountryCode`, `first_name` → `FirstName` |
 | Row class | `<TableClass>Row` | `CountriesRow` |
-| Entity class | `<TableClass>Entity` | `CountriesEntity` |
+| Repository class | `<TableClass>Repository` | `CountriesRepository` |
 | Context class | `--context`, else `<DatabaseName>Context` | `fpprod` → `FpprodContext` |
 
 Names are made unique with a numeric suffix if two tables sanitise to the same class name. Generation **fails** if the context name collides with a table class name — pass a different `--context`.
@@ -275,23 +275,23 @@ public partial class CountriesRow : TableRow<long>
 | Member | Purpose |
 | --- | --- |
 | `TableRow<TPk>` base | Binds the row to its primary key CLR type — here `long`, `decimal` for an Oracle `NUMBER`. |
-| `Key` | The primary key value. `DbEntity.Store` uses this to decide insert vs. update, and `DeleteById` uses it as the `WHERE` value. |
+| `Key` | The primary key value. `TableRepository.Store` uses this to decide insert vs. update, and `DeleteById` uses it as the `WHERE` value. |
 | Properties | One per column, named after the table class's columns. **Nullable columns get a nullable CLR type** (`long? Createuserid`); non-null ones get the value type (`long Id`) with `= null!` on reference types. |
 | `GetOrders` | Called **once per result set**, not per row, and resolves each column name to its ordinal — so the per-row cost is index lookups, not name comparisons. |
 | `SetFields` | Called per row. Every `IsDBNull` check maps one-to-one onto the CLR type chosen above, which is why the generator emits `GetInt64` for a `bigint` and `GetDecimal` for an Oracle `NUMBER`. |
 
 There is no `SetFields` guard for a null non-nullable property — a non-nullable column that is nevertheless `NULL` in the row leaves the property at its default rather than throwing.
 
-### 3. The CRUD entity
+### 3. The CRUD repository
 
-`CountriesEntity` extends `DbEntity<CountriesRow, Countries, long>` and is the only class that issues writes. It takes the context in its constructor and holds it for the lifetime of the request.
+`CountriesRepository` extends `TableRepository<CountriesRow, Countries>` and is the only class that issues writes. It takes the context in its constructor and holds it for the lifetime of the request.
 
 ```csharp
-public partial class CountriesEntity : DbEntity<CountriesRow, Countries, long>
+public partial class CountriesRepository : TableRepository<CountriesRow, Countries>
 {
     private readonly FpprodContext ctx;
 
-    public CountriesEntity(FpprodContext ctx) => this.ctx = ctx;
+    public CountriesRepository(FpprodContext ctx) => this.ctx = ctx;
     // ...
 }
 ```
@@ -299,7 +299,7 @@ public partial class CountriesEntity : DbEntity<CountriesRow, Countries, long>
 **Generated overrides:**
 
 The asynchronous methods are the primary implementation and must be overridden. The
-synchronous methods on `DbEntity` are concrete wrappers that call the asynchronous ones, so
+synchronous methods on `TableRepository` are concrete wrappers that call the asynchronous ones, so
 both paths run the same code.
 
 | Method | What it does |
@@ -313,7 +313,7 @@ both paths run the same code.
 | `DeleteAsync(List<row>, CancellationToken ct)` | `ctx.DeleteByIdsAsync<Countries, long>(rows.Select(r => r.Key), ct)`. |
 | `UpdateBatchAsync(rows, offset, count, reload, ct)` | Private helper holding the dialect's set-based update SQL for one chunk. |
 
-**Inherited from `DbEntity<Row, Structure, Pk>`** — these are not generated, you get them from the core package:
+**Inherited from `TableRepository<Row, Table>`** — these are not generated, you get them from the core package:
 
 | Member | What it does |
 | --- | --- |
@@ -360,13 +360,13 @@ One context is generated for the whole database, in its own file named after it.
 ```csharp
 public partial class FpprodContext : SqlNativeContext
 {
-    private CountriesEntity? _Countries;
+    private CountriesRepository? _Countries;
 
-    public CountriesEntity Countries => _Countries ??= new(this);
+    public CountriesRepository Countries => _Countries ??= new(this);
 
-    private OrdersEntity? _Orders;
+    private OrdersRepository? _Orders;
 
-    public OrdersEntity Orders => _Orders ??= new(this);
+    public OrdersRepository Orders => _Orders ??= new(this);
 }
 ```
 
@@ -376,12 +376,12 @@ public partial class FpprodContext : SqlNativeContext
 | --- | --- |
 | `SqlNativeContext` base | Carries the `DbConnection`, the `Config`, and the `Select`/`Insert`/`Update`/`Delete` builders. |
 | `_X` field | Backing field, lazily initialised. |
-| `X` property | `??= new(this)` — one entity instance per context, created on first access. Handlers that never touch a table never allocate its entity. |
-| `this` | Passes the context into the entity, which is how every write reaches the database. |
+| `X` property | `??= new(this)` — one repository instance per context, created on first access. Handlers that never touch a table never allocate its repository. |
+| `this` | Passes the context into the repository, which is how every write reaches the database. |
 
 The property name is the table class name, so it lines up with the generated class you can `using` at the top of the file. If a table class happens to share the context's name, the property gets a `Table` suffix.
 
-Entities are constructed once per context, and the context is scoped per request — so **the context is not thread-safe**, and one context belongs to one request. For ASP.NET Core, register it with [`SqlNative.AspNetCore`](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative.AspNetCore/README.md):
+Repositories are constructed once per context, and the context is scoped per request — so **the context is not thread-safe**, and one context belongs to one request. For ASP.NET Core, register it with [`SqlNative.AspNetCore`](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative.AspNetCore/README.md):
 
 ```csharp
 builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()

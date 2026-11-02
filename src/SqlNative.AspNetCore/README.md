@@ -37,10 +37,10 @@ Targets `net6.0`, `net8.0`, `net9.0` and `net10.0`, and requires the `Microsoft.
 ```csharp
 using SqlNative;
 
-public class FpprodContext : SqlNativeContext
+public class BooksContext : SqlNativeContext
 {
-    private CountriesEntity countries;
-    public CountriesEntity Countries => countries ??= new(this);
+    private BooksRepository books;
+    public BooksRepository Books => books ??= new(this);
 }
 ```
 
@@ -49,7 +49,7 @@ public class FpprodContext : SqlNativeContext
 ```csharp
 using SqlNative.AspNetCore;
 
-builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()
+builder.Services.AddSqlNativeContext<BooksContext, MySqlConnection>(new()
 {
     ConnectionString = configuration.GetConnectionString("Default")!,
     IsDevelopMode = builder.Environment.IsDevelopment()
@@ -61,26 +61,26 @@ builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()
 ```csharp
 [ApiController]
 [Route("[controller]")]
-public class HelloController(FpprodContext ctx) : ControllerBase
+public class HelloController(BooksContext ctx) : ControllerBase
 {
     [HttpGet("[action]")]
-    public IActionResult CountryCount()
+    public IActionResult BookCount()
     {
-        return Ok(new { CountryCount = ctx.Countries.All().Count });
+        return Ok(new { BookCount = ctx.Books.All().Count });
     }
 
     [HttpGet("[action]")]
-    public IActionResult Countries()
+    public IActionResult Books()
     {
-        return Ok(ctx.BuildQuery<Countries>((q, c) => q
-            .Append($"SELECT {c.Id}, {c.Name}, {c.Iso3}")
-            .Append($"FROM {c}"))
-            .Execute<Countrybrief>());
+        return Ok(ctx.BuildQuery<Books>((q, b) => q
+            .Append($"SELECT {b.Id}, {b.Title}, {b.PublishYear}")
+            .Append($"FROM {b}"))
+            .Execute<BooksRow>());
     }
 }
 ```
 
-The generic parameters are your context type and your provider's connection type. `AddSqlNativeContext<TContext, TConnection>` requires `TConnection : DbConnection, new()` — a public parameterless constructor, which every ADO.NET connection type has.
+The generic parameters are your context type and your provider's connection type. `AddSqlNativeContext<TContext, TConnection>` requires `TContext : SqlNativeContext, new()` and `TConnection : DbConnection, new()` — a public parameterless constructor, which every ADO.NET connection type has.
 
 ---
 
@@ -90,7 +90,7 @@ The generic parameters are your context type and your provider's connection type
 
 1. Instantiates `TConnection` and sets its `ConnectionString`.
 2. **Opens the connection immediately.**
-3. Constructs `TContext` and assigns `Connection` and `Config` (built from the options you passed).
+3. Constructs `TContext` and assigns `Connection`, `IsDevelopMode` and `LogSqlCommands` from the options you passed.
 4. Sets `OwnsConnection = true`.
 5. Assigns the host's `ILogger` to `TContext.Logger`, so executed SQL commands go to the app's logging pipeline instead of the console. The category is `SqlNative`, so the host can turn the commands on or off by level:
 
@@ -112,24 +112,21 @@ If your context constructor throws, the factory closes and disposes the connecti
 ## Options
 
 ```csharp
-builder.Services.AddSqlNativeContext<FpprodContext, MySqlConnection>(new()
+builder.Services.AddSqlNativeContext<BooksContext, MySqlConnection>(new()
 {
-    ConnectionString = "Server=localhost;Database=fpprod;...",
+    ConnectionString = "Server=localhost;Database=books;...",
     IsDevelopMode = true,
-    MaxParametersPerStatement = 60_000,
-    MaxPacketSize = 1_000_000
+    LogSqlCommands = true
 });
 ```
 
 | Option | Default | Effect |
 | --- | --- | --- |
 | `ConnectionString` | `""` | Assigned to the connection before it is opened. Required. |
-| `IsDevelopMode` | `false` | Forwarded to `SqlNativeContextConfig`. |
-| `LogSqlCommands` | `false` | Forwarded to `SqlNativeContextConfig`; writes every executed SQL command to the host's `ILogger`. `IsDevelopMode` turns it on too. |
-| `MaxParametersPerStatement` | `60_000` | Forwarded to `SqlNativeContextConfig`; batch size for `DeleteByIds` and generated entities. |
-| `MaxPacketSize` | `1_000_000` | Forwarded to `SqlNativeContextConfig`. |
+| `IsDevelopMode` | `false` | Forwarded to `SqlNativeContext.IsDevelopMode`; enables row-class generation and turns on SQL logging. |
+| `LogSqlCommands` | `false` | Forwarded to `SqlNativeContext.LogSqlCommands`; writes every executed SQL command to the host's `ILogger`. `IsDevelopMode` turns it on too. |
 
-Note that `IsDevelopMode` defaults to `false` here, while a `SqlNativeContext` constructed by hand defaults to `true`. If you want consistent behaviour across an app, set it explicitly.
+Note that `IsDevelopMode` defaults to `false` here, while a `SqlNativeContext` constructed by hand also defaults to `false`. If you want consistent behaviour across an app, set it explicitly.
 
 ---
 
@@ -138,21 +135,21 @@ Note that `IsDevelopMode` defaults to `false` here, while a `SqlNativeContext` c
 The context is an ordinary scoped service, so minimal API endpoints take it as a parameter. `Execute<T>()` is synchronous — read from the database on the request thread, and return the mapped result:
 
 ```csharp
-app.MapGet("/countries", (FpprodContext ctx) =>
+app.MapGet("/books", (BooksContext ctx) =>
 {
-    return ctx.BuildQuery<Countries>((q, c) => q
-        .Append($"SELECT {c.Id}, {c.Name}, {c.Iso3}")
-        .Append($"FROM {c}"))
-        .Execute<Countrybrief>();
+    return ctx.BuildQuery<Books>((q, b) => q
+        .Append($"SELECT {b.Id}, {b.Title}, {b.PublishYear}")
+        .Append($"FROM {b}"))
+        .Execute<BooksRow>();
 });
 
-app.MapGet("/countries/{id}", (int id, FpprodContext ctx) =>
-    ctx.BuildQuery<Countries>((q, c) => q
-        .Append($"SELECT {c.Id}, {c.Name}, {c.Iso3}")
-        .Append($"FROM {c}")
-        .Append($"WHERE {c.Id} = @id")
+app.MapGet("/books/{id}", (int id, BooksContext ctx) =>
+    ctx.BuildQuery<Books>((q, b) => q
+        .Append($"SELECT {b.Id}, {b.Title}, {b.PublishYear}")
+        .Append($"FROM {b}")
+        .Append($"WHERE {b.Id} = @id")
         .SetParameters(new { id }))
-    .Execute<Countrybrief>()
+    .Execute<BooksRow>()
     .FirstOrDefault());
 ```
 
@@ -160,12 +157,12 @@ On a web app, prefer the async overloads — they use the provider's real async 
 request thread is released while the database works:
 
 ```csharp
-app.MapGet("/countries", async (FpprodContext ctx, CancellationToken ct) =>
+app.MapGet("/books", async (BooksContext ctx, CancellationToken ct) =>
 {
-    return await ctx.BuildQuery<Countries>((q, c) => q
-        .Append($"SELECT {c.Id}, {c.Name}, {c.Iso3}")
-        .Append($"FROM {c}"))
-        .ExecuteAsync<Countrybrief>(ct);
+    return await ctx.BuildQuery<Books>((q, b) => q
+        .Append($"SELECT {b.Id}, {b.Title}, {b.PublishYear}")
+        .Append($"FROM {b}"))
+        .ExecuteAsync<BooksRow>(ct);
 });
 ```
 
@@ -176,12 +173,12 @@ app.MapGet("/countries", async (FpprodContext ctx, CancellationToken ct) =>
 `AddSqlNativeContext` always creates and owns its connection. If you would rather hand SqlNative a connection you already have — one borrowed from an EF Core `DbContext`, or one shared with the rest of your app — the core context supports that directly. Leave `OwnsConnection` at its default of `false` and nobody will close it:
 
 ```csharp
-app.MapGet("/countries", (AppDbContext ef, FpprodContext sql) =>
+app.MapGet("/books", (AppDbContext ef, BooksContext sql) =>
 {
     var connection = ef.Database.GetDbConnection();
     connection.Open();
     sql.Connection = connection;      // OwnsConnection stays false — EF disposes it
-    return sql.Countries.All();
+    return sql.Books.All();
 });
 ```
 
@@ -194,7 +191,7 @@ Doing this by hand in every endpoint is unpleasant, and a registration helper fo
 This package is deliberately small. Not implemented yet:
 
 - **Connection pooling.** `ConnectionCreatePolicy` (`ConnectionPerContext` / `ConnectionPool`) is declared but `internal`, and the corresponding properties are commented out in `SqlNativeOptions`. Every scoped context opens its own connection; pooling is left to the provider.
-- **A bare `AddSqlNative()`** for when you only want the core services — the method is written but commented out.
+- **A bare `AddSqlNative()`** for when you only want the core services — the method is not written.
 - **Health checks, interceptors and logging hooks.** Executed SQL commands are written to the host's `ILogger`; health checks and command interceptors are not wired up.
 
 ---

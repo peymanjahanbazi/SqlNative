@@ -5,7 +5,7 @@ namespace SqlNative.ModelGenerator.Generation.Oracle;
 internal sealed class OracleContextWriter : IContextWriter
 {
     public string Generate(
-        IReadOnlyList<(string ClassName, string EntityClassName)> tables,
+        IReadOnlyList<(string ClassName, string RepositoryClassName)> tables,
         string contextName,
         string packageNamespace)
     {
@@ -17,13 +17,13 @@ internal sealed class OracleContextWriter : IContextWriter
         builder.AppendLine($"public partial class {contextName} : SqlNativeContext");
         builder.AppendLine("{");
 
-        foreach (var (className, entityClassName) in tables)
+        foreach (var (className, repositoryClassName) in tables)
         {
             var propertyName = className == contextName ? className + "Table" : className;
             var fieldName = "_" + propertyName;
-            builder.AppendLine($"    private {entityClassName}? {fieldName};");
+            builder.AppendLine($"    private {repositoryClassName}? {fieldName};");
             builder.AppendLine();
-            builder.AppendLine($"    public {entityClassName} {propertyName} => {fieldName} ??= new(this);");
+            builder.AppendLine($"    public {repositoryClassName} {propertyName} => {fieldName} ??= new(this);");
             builder.AppendLine();
         }
 

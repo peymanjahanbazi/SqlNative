@@ -10,7 +10,7 @@ internal sealed class OracleModelWriter : IModelWriter
 {
     private static readonly HashSet<string> StructureReservedNames = new(StringComparer.Ordinal)
     {
-        "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity",
+        "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity", "Repository",
         "Schema", "ToString", "Equals", "GetHashCode", "GetType",
     };
 
@@ -37,7 +37,7 @@ internal sealed class OracleModelWriter : IModelWriter
     public string Generate(
         TableInfo table,
         string className,
-        string entityClassName,
+        string repositoryClassName,
         string contextName,
         string packageNamespace)
     {
@@ -66,7 +66,7 @@ internal sealed class OracleModelWriter : IModelWriter
         builder.AppendLine();
         WriteRow(builder, rowClassName, columns, helper);
         builder.AppendLine();
-        WriteEntity(builder, className, entityClassName, rowClassName, contextName, columns, primaryKeys, helper);
+        WriteEntity(builder, className, repositoryClassName, rowClassName, contextName, columns, primaryKeys, helper);
 
         return builder.ToString();
     }
@@ -228,7 +228,7 @@ internal sealed class OracleModelWriter : IModelWriter
     private static void WriteEntity(
         StringBuilder builder,
         string className,
-        string entityClassName,
+        string repositoryClassName,
         string rowClassName,
         string contextName,
         IReadOnlyList<ColumnModel> columns,
@@ -240,11 +240,11 @@ internal sealed class OracleModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {entityClassName} : DbEntity<{rowClassName}, {className}>");
+            $"public partial class {repositoryClassName} : TableRepository<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
-        builder.AppendLine($"    public {entityClassName}({contextName} ctx)");
+        builder.AppendLine($"    public {repositoryClassName}({contextName} ctx)");
         builder.AppendLine("    {");
         builder.AppendLine("        this.ctx = ctx;");
         builder.AppendLine("    }");

@@ -49,29 +49,29 @@ public class Query
     private StringBuilder sqlBuilder = new();
 
     /// <summary>Appends SQL text to the query.</summary>
-    /// <param name="v">The SQL text to append.</param>
+    /// <param name="sql">The SQL text to append.</param>
     /// <returns>This query instance.</returns>
-    public Query Append(string v)
+    public Query Append(string sql)
     {
-        if (string.IsNullOrWhiteSpace(v))
+        if (string.IsNullOrWhiteSpace(sql))
         {
             return this;
         }
-        sqlBuilder.AppendLine(v);
+        sqlBuilder.AppendLine(sql);
         return this;
     }
 
     /// <summary>Appends SQL text when the specified condition is true.</summary>
     /// <param name="condition">Whether the text should be appended.</param>
-    /// <param name="v">The SQL text to append.</param>
+    /// <param name="sql">The SQL text to append.</param>
     /// <returns>This query instance.</returns>
-    public Query AppendIf(bool condition, string v)
+    public Query AppendIf(bool condition, string sql)
     {
-        if (!condition || string.IsNullOrWhiteSpace(v))
+        if (!condition || string.IsNullOrWhiteSpace(sql))
         {
             return this;
         }
-        sqlBuilder.AppendLine(v);
+        sqlBuilder.AppendLine(sql);
         return this;
     }
 
@@ -112,6 +112,10 @@ public class Query
     public Query AddParameters(object parameters)
     {
         if (parameters == null) return this;
+        if (parameters is Dictionary<string, object?> dict)
+        {
+            return AddParameters(dict);
+        }
 
         var properties = parameters.GetType()
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance);

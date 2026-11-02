@@ -3,8 +3,8 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this entity.</typeparam>
-/// <typeparam name="Structure">The table structure type used by this entity.</typeparam>
+/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
+/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -12,11 +12,11 @@ namespace SqlNative;
 /// the <c>Store</c> members, which are concrete because they can be expressed in terms of
 /// the members above them.
 /// </remarks>
-public abstract class DbEntity<Row, Structure>
+public abstract class TableRepository<Row, Table>
     where Row : TableRow, new()
-    where Structure : TableStructure, new()
+    where Table : TableStructure, new()
 {
-    /// <summary>Gets the context used to run the commands of this entity.</summary>
+    /// <summary>Gets the context used to run the commands of this repository.</summary>
     public abstract SqlNativeContext Context { get; }
 
     /// <summary>Inserts a row.</summary>
@@ -142,9 +142,9 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="predicate">A function that creates the predicate for the table.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The number of rows affected.</returns>
-    public async Task<int> DeleteAsync(Func<Structure, string> predicate, CancellationToken ct = default)
+    public async Task<int> DeleteAsync(Func<Table, string> predicate, CancellationToken ct = default)
     {
-        return await this.Context.BuildQuery<Structure>((q, t) => q
+        return await this.Context.BuildQuery<Table>((q, t) => q
         .Config(() => { t.DisableAlias = true; })
         .Append($"DELETE FROM {t}")
         .Append($" WHERE {predicate(t)}")
@@ -155,10 +155,10 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="predicate">A function that creates the predicate for the table.</param>
     /// <returns>The number of rows affected.</returns>
     /// <remarks>
-    /// This method blocks on <see cref="DeleteAsync(Func{Structure, string}, CancellationToken)"/>.
+    /// This method blocks on <see cref="DeleteAsync(Func{Table, string}, CancellationToken)"/>.
     /// Prefer the asynchronous version in asynchronous code.
     /// </remarks>
-    public int Delete(Func<Structure, string> predicate)
+    public int Delete(Func<Table, string> predicate)
     {
         return DeleteAsync(predicate).GetAwaiter().GetResult();
     }
@@ -198,10 +198,10 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="parameters">Optional parameter values used by the predicate.</param>
     /// <returns>The selected rows.</returns>
     /// <remarks>
-    /// This method blocks on <see cref="SelectAsync(Func{Structure, string}, object, CancellationToken)"/>.
+    /// This method blocks on <see cref="SelectAsync(Func{Table, string}, object, CancellationToken)"/>.
     /// Prefer the asynchronous version in asynchronous code.
     /// </remarks>
-    public List<Row> Select(Func<Structure, string> predicate, object parameters = null)
+    public List<Row> Select(Func<Table, string> predicate, object parameters = null)
     {
         return SelectAsync(predicate, parameters).GetAwaiter().GetResult();
     }
@@ -211,11 +211,11 @@ public abstract class DbEntity<Row, Structure>
     /// <param name="parameters">Optional parameter values used by the predicate.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The selected rows.</returns>
-    public async Task<List<Row>> SelectAsync(Func<Structure, string> predicate, object parameters = null, CancellationToken ct = default)
+    public async Task<List<Row>> SelectAsync(Func<Table, string> predicate, object parameters = null, CancellationToken ct = default)
     {
         var condition = "";
 
-        return await Context.BuildQuery<Structure>((q, e) => q
+        return await Context.BuildQuery<Table>((q, e) => q
             .Config(() => { condition = predicate(e); })
             .Append($"SELECT {e.Star}")
             .Append($"FROM {e}")

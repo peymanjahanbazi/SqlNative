@@ -7,7 +7,7 @@ internal interface IModelWriter
     string Generate(
         TableInfo table,
         string className,
-        string entityClassName,
+        string repositoryClassName,
         string contextName,
         string packageNamespace);
 }

@@ -38,13 +38,13 @@ internal sealed class MsSqlGenerationService : IGenerationService
                 $"The context name '{contextName}' conflicts with a generated table class name in namespace '{options.Package}'. Choose another name with --context.");
         }
 
-        var usedEntityClassNames = new HashSet<string>(usedClassNames, StringComparer.Ordinal);
-        var generated = new (string ClassName, string EntityClassName)[tables.Length];
+        var usedRepositoryClassNames = new HashSet<string>(usedClassNames, StringComparer.Ordinal);
+        var generated = new (string ClassName, string RepositoryClassName)[tables.Length];
         for (var i = 0; i < tables.Length; i++)
         {
             var className = tables[i].ClassName;
-            var entityClassName = _helper.EnsureUnique(className + "Entity", usedEntityClassNames);
-            generated[i] = (className, entityClassName);
+            var repositoryClassName = _helper.EnsureUnique(className + "Repository", usedRepositoryClassNames);
+            generated[i] = (className, repositoryClassName);
         }
 
         var writtenFiles = new List<string>(tables.Length + 1);
@@ -56,7 +56,7 @@ internal sealed class MsSqlGenerationService : IGenerationService
                 _modelWriter.Generate(
                     tables[i].Table,
                     generated[i].ClassName,
-                    generated[i].EntityClassName,
+                    generated[i].RepositoryClassName,
                     contextName,
                     options.Package));
             writtenFiles.Add(filePath);

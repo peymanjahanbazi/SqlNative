@@ -16,8 +16,8 @@ This is the core package. It contains the query builder, the table/column model,
 - [CRUD](#crud)
 - [How parameters are handled](#how-parameters-are-handled)
 - [Mapping results](#mapping-results)
-- [Generating models](#generating-models)
-- [Typed entities](#typed-entities)
+- [Generating a row class](#generating-a-row-class)
+- [Typed repositories](#typed-repositories)
 - [Configuration and lifecycle](#configuration-and-lifecycle)
 - [Logging](#logging)
 - [Supported databases](#supported-databases)
@@ -34,10 +34,10 @@ SqlNative is an ORM in the sense that it maps your tables to C# types and gives 
 | --- | --- |
 | Tables and columns as typed classes | Yes — hand-write them once, or generate them |
 | Row → POCO mapping | Yes — reflection, or explicit ordinals for full control |
-| `Select` / `Insert` / `Update` / `Delete` | Yes — each returns a `Query` you can inspect before it runs |
-| Per-table CRUD (`ctx.Emp.Insert(row)`) | Yes — via `DbEntity<T>` |
-| Code generation from a live schema | Yes |
-| Change tracking | No — `Store(row)` decides insert vs. update by looking at the key |
+| Query builder (`BuildQuery`) | Yes — returns a `Query` you can inspect before it runs |
+| Per-table CRUD (`ctx.Emp.Insert(row)`) | Yes — via `TableRepository<Row, Table>` |
+| Code generation from a live schema | Yes — `SqlNative.ModelGenerator` |
+| Change tracking | No — you call `Insert` or `Update` yourself |
 | Lazy loading / proxies | No |
 | Migrations | No — you write the DDL |
 | Unit of work / identity map | No — every `Query` stands alone |
@@ -68,10 +68,10 @@ You also need an ADO.NET provider (`Microsoft.Data.SqlClient`, `MySqlConnector`,
 ```csharp
 using SqlNative;
 
-public partial class DboEmp : MsSqlTableStructure, HasPrimaryKey
+public partial class DboEmp : MsSqlTableStructure
 {
     public override string TableName { get; } = "Emp";
-    protected override string QuotedTableName { get; } = "dbo.Emp";
+    public override string QuotedTableName { get; } = "dbo.Emp";
     public override string Schema { get; } = "dbo";
 
     public TableColumn Id { get; }
@@ -79,14 +79,12 @@ public partial class DboEmp : MsSqlTableStructure, HasPrimaryKey
     public TableColumn Lastname { get; }
     public TableColumn Deptid { get; }
 
-    public override TableColumn PKey => Id;
-
     public DboEmp()
     {
-        Id       = new MsSqlColumn("Id", false, "bigint", typeof(long), this);
-        Firstname = new MsSqlColumn("FirstName", false, "nvarchar", typeof(string), this);
-        Lastname = new MsSqlColumn("LastName", false, "nvarchar", typeof(string), this);
-        Deptid   = new MsSqlColumn("DeptId", false, "bigint", typeof(long), this);
+        Id        = new MsSqlColumn("Id", false, "bigint", typeof(long), 0, this);
+        Firstname = new MsSqlColumn("FirstName", false, "nvarchar", typeof(string), 0, this);
+        Lastname  = new MsSqlColumn("LastName", false, "nvarchar", typeof(string), 0, this);
+        Deptid    = new MsSqlColumn("DeptId", false, "bigint", typeof(long), 0, this);
     }
 }
 ```
@@ -108,15 +106,12 @@ public class Db1Context : SqlNativeContext
 using var connection = new SqlConnection(connectionString);
 using var ctx = new Db1Context(connection) { OwnsConnection = true };
 
-var rows = ctx.Select<DboEmp>(e => new SelectModel
-{
-    From     = e,
-    Select   = $"{e.Id}, {e.Firstname}, {e.Lastname}",
-    Where    = $"{e.Deptid} = @deptid",
-    Parameters = new { deptid = 4 },
-    OrderBy  = $"{e.Lastname} ASC",
-    Limit    = 50
-}).Execute<EmpRow>();
+var rows = ctx.BuildQuery<DboEmp>((q, e) => q
+    .Append($"SELECT {e.Id}, {e.Firstname}, {e.Lastname}")
+    .Append($"FROM {e}")
+    .Append($"WHERE {e.Deptid} = @deptid")
+    .SetParameters(new { deptid = 4 }))
+    .Execute<EmpRow>();
 ```
 
 ---
@@ -136,48 +131,53 @@ var rows = ctx.Select<DboEmp>(e => new SelectModel
 
 Quoting is opt-in per column via the `needsBrackets` / `needsBackticks` / `needsDoubleQuotes` flag, so identifiers that don't need it stay unquoted. Every column also carries its SQL type and CLR type, which the model generator uses later.
 
-`HasPrimaryKey` marks a table that has one, enabling `DeleteById` / `DeleteByIds`.
+`MsSqlTableStructure`, `PostgresTableStructure` and `OracleTableStructure` also expose an abstract `Schema` property.
 
 ### Aliases
 
-`TableStructure.ToString()` renders as `[schema].[Table] as [alias]` — except in `Insert`, `Update` and `Delete`, where `DisableAlias = true` strips it. You never set either by hand: `Select` and `BuildQuery` do it.
-
-When you select from more than one table, SqlNative assigns a short alias for each, derived from the table name and guaranteed unique across the query:
+`TableStructure.ToString()` renders as `[schema].[Table] as [alias]`. You never set the alias by hand: `BuildQuery` assigns a short one, derived from the table name and guaranteed unique across the query.
 
 ```csharp
-ctx.Select<DboEmp, DboEmp>((e1, e2) => new SelectModel
-{
-    From   = e1,
-    Select = $"{e1.Id}, {e1.Lastname}, {e2.Lastname} AS Manager",
-    Joins  = [new LeftJoin { Table = e2, On = $"{e1.Deptid} = {e2.Id}" }]
-})
+ctx.BuildQuery<DboEmp, DboEmp>((q, e1, e2) => q
+    .Append($"SELECT {e1.Id}, {e1.Lastname}, {e2.Lastname} AS Manager")
+    .Append($"FROM {e1}")
+    .Append($"LEFT JOIN {e2} ON {e1.Deptid} = {e2.Id}"))
 // FROM [dbo].[Emp] as e LEFT JOIN [dbo].[Emp] as e1 ON e.DeptId = e1.Id
 ```
+
+Set `DisableAlias = true` on a table structure to drop the alias from the generated SQL — useful inside `INSERT`, `UPDATE` and `DELETE`, where the table is named on its own.
 
 ### Expressions
 
 `QueryPart` is an operator-overloaded string wrapper for building expressions:
 
 ```csharp
-QueryPart.IsNull      // "NULL"
-QueryPart age = 30;   // "30"
+QueryPart age = 30;      // "30"
 QueryPart active = true; // "TRUE"
 
-var filter = $"{a.Lastname} == NULL";   // a.Lastname IS NULL
+var filter = $"{a.Lastname} == NULL";   // a.Lastname = NULL
 var range  = $"{a.Id} >= {1}";          // a.Id >= 1
 var neg    = !$"{a.Name}.Contains(\"x\")";  // NOT ...
 ```
 
-`==` emits `IS NULL` when either operand is the literal `"null"`, and `=` otherwise. `+` concatenates two `QueryPart`s with a `+`, which is how you write arithmetic like `a.Price * a.Qty`; note that `TableColumn + TableColumn` is a different overload and produces a comma-separated select list instead.
+`==` emits `IS NULL` when either operand is the literal `"null"` (lower case), and `=` otherwise. Note that `SqlFunctions.NULL` renders as upper-case `NULL`, so comparing against it produces `= NULL` rather than `IS NULL` — compare against the lower-case `"null"` string if you want the null check.
+
+`+` concatenates two `QueryPart`s with a `+`, which is how you write arithmetic like `a.Price * a.Qty`. Note that `TableColumn + TableColumn` is a different overload: it joins with a **space**, so build comma-separated column lists with `SqlFunctions.CList(...)`.
+
+```csharp
+var cols = SqlFunctions.CList(c.Name, c.CountryCode, c.Population); // "c.Name, c.CountryCode, c.Population"
+```
 
 ---
 
 ## Building and executing queries
 
-`Select`, `Insert` and `Update` return a `Query` — a builder that has not run yet. You finish it and execute it yourself, which means you can inspect or extend the SQL first:
+`BuildQuery` returns a `Query` — a builder that has not run yet. You finish it and execute it yourself, which means you can inspect or extend the SQL first:
 
 ```csharp
-var q = ctx.Select<DboEmp>(e => new SelectModel { From = e, Select = e.Star });
+var q = ctx.BuildQuery<DboEmp>((q, e) => q
+    .Append($"SELECT {e.Star}")
+    .Append($"FROM {e}"));
 
 q.Append("ORDER BY LastName DESC");     // add your own clauses
 
@@ -189,26 +189,36 @@ var rows = q.Execute<EmpRow>();
 | --- | --- |
 | `Append(string)` | Append a line of SQL. Blank lines are ignored. |
 | `AppendIf(bool, string)` | Append only when the condition holds. |
-| `AppendFor<T>(items, join, func)` | Append once per item with a separator — useful for `IN` lists. |
-| `SetParameters(object)` | Bind parameters, from a dictionary or an anonymous object. |
+| `AppendFor<T>(items, func)` | Append once per item. |
+| `AppendFor<T>(join, items, func)` | Append once per item with a separator — useful for `IN` lists. |
+| `SetParameters(object)` | Replace the parameters, from a dictionary or an anonymous object. |
+| `AddParameters(object)` | Add parameters to the ones already set. |
 | `Execute<T>()` | Run and map to `List<T>`. |
 | `ExecuteScalar()` | Run and return the first column of the first row. |
 | `ExecuteNonQuery()` | Run and return the affected row count. |
 | `ExecuteAsync<T>(ct)` | Awaitable `Execute<T>()`. |
 | `ExecuteScalarAsync(ct)` | Awaitable `ExecuteScalar()`. |
 | `ExecuteNonQueryAsync(ct)` | Awaitable `ExecuteNonQuery()`. |
+| `Model<T>(className)` | Write a row class for this result set. |
+| `Config(Action)` | Change the table structure before the SQL is built. |
 | `Sql` | The generated SQL, without executing it. |
+
+`BuildQuery` has overloads for one table up to fifteen. The tables are created for you, each with a unique alias.
 
 ### Async
 
 Every execution method has an `Async` counterpart that takes an optional `CancellationToken`:
 
 ```csharp
-var rows = await ctx.Select<DboEmp>(e => new SelectModel { From = e, Select = e.Star })
-                     .ExecuteAsync<EmpRow>(ct);
+var rows = await ctx.BuildQuery<DboEmp>((q, e) => q
+        .Append($"SELECT {e.Star}")
+        .Append($"FROM {e}"))
+    .ExecuteAsync<EmpRow>(ct);
 
-var affected = await ctx.InsertAsync<DboEmp>(e => new InsertModel { /* ... */ }, ct);
-var updated  = await ctx.UpdateAsync<DboEmp>(e => new UpdateModel { /* ... */ }, ct);
+var affected = await ctx.BuildQuery<DboEmp>((q, e) => q
+        .Append($"DELETE FROM {e} WHERE {e.Id} = @id")
+        .SetParameters(new { id = 1 }))
+    .ExecuteNonQueryAsync(ct);
 ```
 
 The async methods use the provider's real async I/O (`ExecuteReaderAsync`, `ReadAsync`,
@@ -220,90 +230,61 @@ same code.
 
 ## CRUD
 
+CRUD lives on `TableRepository<Row, Table>`, not on the context. You write a repository for a table — or generate one — and a context exposes it as a property:
+
+```csharp
+public class Db1Context : SqlNativeContext
+{
+    private DboEmpRepository emp;
+    public DboEmpRepository Emp => emp ??= new(this);
+}
+```
+
 ### Select
 
 ```csharp
-ctx.Select<DboEmp>(e => new SelectModel
-{
-    From      = e,
-    Select    = $"{e.Id}, {e.Lastname}",
-    Joins     = [new InnerJoin { Table = dept, On = $"{e.Deptid} = {dept.Id}" }],
-    Where     = $"{e.Lastname} LIKE @name",
-    GroupBy   = $"{e.Deptid}",
-    Having    = $"COUNT(*) > 1",
-    OrderBy   = $"{e.Lastname}",
-    Limit     = 20,
-    Offset    = 40,
-    Parameters = new { name = "%z%" }
-});
+var rows = ctx.Emp.Select(e => $"{e.Deptid} = @deptid", new { deptid = 4 });
+
+var all = ctx.Emp.All();
 ```
 
-`Select` has overloads for one table up to fifteen. Join types are `LeftJoin`, `RightJoin`, `InnerJoin`, `FullJoin` and `CrossJoin`. `Limit` and `Offset` are emitted as `LIMIT` / `OFFSET` — check the syntax matches your engine, since SQL Server spells it differently.
+`Select` takes a predicate over the table structure and returns `List<Row>`. The predicate may use any column, and the parameters are bound, not interpolated.
 
 ### Insert
 
 ```csharp
-var affected = ctx.Insert<DboEmp>(e => new InsertModel
-{
-    Columns = e.Firstname + e.Lastname + e.Deptid,
-    Values  = "@Firstname, @Lastname, @Deptid",
-    Parameters = new { Firstname = "Ada", Lastname = "Lovelace", Deptid = 4 }
-});
+var affected = ctx.Emp.Insert(row, InsertOptions.SkipPrimaryKey);
+var affectedMany = ctx.Emp.Insert(rows);
 ```
 
-The insert executes immediately and returns the affected count. Use `InsertAsync` to await it
-with a `CancellationToken`.
+The insert runs immediately and returns the affected count. `InsertAsync` is the awaitable counterpart.
 
-Append `OUTPUT INSERTED.*` (or `RETURNING *`) to read the row back.
+`InsertOptions` controls the primary key and whether the row is read back:
+
+| Option | Effect |
+| --- | --- |
+| `SkipPrimaryKey` | Omits the primary key from the INSERT. The default. |
+| `LoadRecord` | Reads the inserted row back and copies it onto the object you passed in. |
+| `LoadAndSkip` | Both — omits the key and reads the row back. |
 
 ### Update
 
 ```csharp
-ctx.Update<DboEmp>(e => new UpdateModel
-{
-    Set        = $"{e.Lastname} = @lastname",
-    Where      = $"{e.Id} = @id",
-    Parameters = new { lastname = "Byron", id = 12 }
-});
+var affected = ctx.Emp.Update(row, reload: true);
+var affectedMany = ctx.Emp.Update(rows);
 ```
 
-Like `Insert`, it executes immediately and returns the affected count; `UpdateAsync` is the
-awaitable counterpart.
+`reload: true` re-reads the row afterwards, so database-side defaults and triggers land on your object.
 
 ### Delete
 
-The delete helpers execute immediately and return the affected count — they do not return a `Query`:
-
 ```csharp
-ctx.DeleteWhere<DboEmp>(e => $"{e.Deptid} = @deptid", new { deptid = 4 });
-ctx.DeleteById<DboEmp, long>(12);
-ctx.DeleteByIds<DboEmp, long>([12, 13, 14]);   // batched by MaxParametersPerStatement
-ctx.DeleteAll<DboEmp>();
+ctx.Emp.Delete(row);                                       // by key
+ctx.Emp.Delete(rows);                                      // a list
+ctx.Emp.Delete(e => $"{e.Deptid} = @deptid");           // by predicate
 ```
 
-Each helper also has an awaitable counterpart:
-
-```csharp
-await ctx.DeleteWhereAsync<DboEmp>(e => $"{e.Deptid} = @deptid", new { deptid = 4 }, ct);
-await ctx.DeleteByIdAsync<DboEmp, long>(12, ct);
-await ctx.DeleteByIdsAsync<DboEmp, long>([12, 13, 14], ct);   // each batch is a separate await
-await ctx.DeleteAllAsync<DboEmp>(ct);
-```
-
-### Arbitrary SQL
-
-When a query doesn't fit the model builders, use `BuildQuery` directly:
-
-```csharp
-var rows = ctx.BuildQuery((Query q, DboEmp e) => q
-    .Append($"SELECT {e.Id}, {e.Lastname}")
-    .Append($"FROM {e}")
-    .Append($"WHERE {e.Deptid} = @deptid")
-    .SetParameters(new { deptid = 4 }))
-    .Execute<EmpRow>();
-```
-
-`BuildQuery` handles the aliasing for you and has overloads up to fifteen tables.
+The delete helpers run immediately and return the affected count — they do not return a `Query`.
 
 ---
 
@@ -313,11 +294,10 @@ var rows = ctx.BuildQuery((Query q, DboEmp e) => q
 
 | Parameter value | What happens |
 | --- | --- |
-| `null` | Replaced in the SQL with the literal `NULL`. |
-| `byte`, `short`, `int`, `long`, `decimal`, `double`, `float`, `bool` | Inlined as a literal, formatted with the invariant culture. |
+| `null` | Bound as a `DbParameter` with `DBNull.Value`. |
 | Anything else | Bound as a real `DbParameter` on the command. |
 
-So only strings, dates, GUIDs, arrays and `DBNull` actually reach the database as parameters. This keeps the parameter count down for the common case, but it also means an inlined number is not escaped. If you are passing a value that came from user input and is numeric, cast it to `string` to force parameter binding.
+Only strings, dates, GUIDs, arrays and `DBNull` actually reach the database as parameters, so a value is always escaped by the provider.
 
 The `@` prefix is optional — `@deptid` and `deptid` both bind to `@deptid`.
 
@@ -354,12 +334,11 @@ public string Department { get; set; }
 Derive from `QueryResult` to take control. Resolve the ordinals once per result set, then read them by index — no per-row name lookup, and duplicate column names are no longer a problem.
 
 ```csharp
-public partial class EmpRow : TableRow<long>
+public partial class EmpRow : QueryResult
 {
     public long Id { get; set; }
     public string Lastname { get; set; }
     public string Manager { get; set; }
-    public override long Key => Id;
 
     public override int[] GetOrders(DbDataReader reader) => new[]
     {
@@ -377,75 +356,124 @@ public partial class EmpRow : TableRow<long>
 }
 ```
 
-`TableRow<TPk>` is a `QueryResult` that also exposes `Key`, which is what `DbEntity` uses to decide insert vs. update.
+`TableRow` is an alias for `QueryResult` intended for rows that map to a table; it adds nothing on its own.
+
+`OrdinalN` is a `protected static` helper on `QueryResult`, so it is only callable from inside a `QueryResult` subclass. It finds the *n*-th occurrence of a repeated column name — useful when a join brings back two columns with the same name.
 
 ---
 
-## Generating models
+## Generating a row class
 
 Rather than hand-writing rows, run the query once and let SqlNative write the class:
 
 ```csharp
-ctx.Select<DboEmp, DboEmp>((e1, e2) => new SelectModel
-{
-    From   = e1,
-    Select = $"{e1.Id}, {e1.Lastname}, {e2.Lastname} AS Manager",
-    Joins  = [new LeftJoin { Table = e2, On = $"{e1.Deptid} = {e2.Id}" }]
-})
-.Model<Program>("EmpWithManager")   // writes ./EmpWithManager.cs, next to the calling file
+ctx.BuildQuery<DboEmp, DboEmp>((q, e1, e2) => q
+    .Append($"SELECT {e1.Id}, {e1.Lastname}, {e2.Lastname} AS Manager")
+    .Append($"FROM {e1}")
+    .Append($"LEFT JOIN {e2} ON {e1.Deptid} = {e2.Id}"))
+.Model<Program>("EmpWithManager")   // writes EmpWithManager.cs, next to the calling file
 .Execute<EmpWithManager>();
 ```
 
-`.Model<T>()` executes the query against the database, reads the schema of the result set and writes a `QueryResult` subclass for it. The file lands beside the calling source file — `[CallerFilePath]` decides where — and defaults to `<FileName>.<CallerMemberName>Model.cs` unless you pass a class name. This is the fastest way to get a correct row type for an awkward query, and it's how the checked-in examples in `SqlNative.ConsoleTest` were produced.
+`.Model<T>()` executes the query against the database, reads the schema of the result set and writes a `QueryResult` subclass for it. The file lands beside the calling source file — `[CallerFilePath]` decides where — and defaults to `<FileName>.<CallerMemberName>Model.cs` unless you pass a class name.
+
+It only runs when `IsDevelopMode` is on, so it is inert in production.
 
 ---
 
-## Typed entities
+## Typed repositories
 
-`DbEntity<Row, Structure, Pk>` is a higher-level wrapper for the common per-table operations, so a context can expose `ctx.Emp` and get a small repository:
+`TableRepository<Row, Table>` is a higher-level wrapper for the common per-table operations, so a context can expose `ctx.Emp` and get a small repository:
 
 ```csharp
 public class Db1Context : SqlNativeContext
 {
-    private DboEmpEntity emp;
-    public DboEmpEntity Emp => emp ??= new(this);
+    private DboEmpRepository emp;
+    public DboEmpRepository Emp => emp ??= new(this);
 }
 ```
 
-The generated or hand-written entity gives you:
+The generated or hand-written repository gives you:
 
 ```csharp
 ctx.Emp.All()                                             // List<Row>
+ctx.Emp.AllAsync(ct)
 ctx.Emp.Select(e => $"{e.Deptid} = @deptid", new { deptid = 4 })
+ctx.Emp.SelectAsync(e => $"{e.Deptid} = @deptid", new { deptid = 4 }, ct)
 ctx.Emp.Insert(row, InsertOptions.SkipPrimaryKey)        // or LoadRecord / LoadAndSkip / both
+ctx.Emp.InsertAsync(row, InsertOptions.SkipPrimaryKey, ct)
 ctx.Emp.Update(row, reload: true)
+ctx.Emp.UpdateAsync(row, reload: true, ct)
 ctx.Emp.Delete(row)
-ctx.Emp.Store(row)                                        // insert or update, based on whether Key is set
-ctx.Emp.Store(rows)                                       // splits the list and does both
+ctx.Emp.DeleteAsync(row, ct)
 ```
 
-`Store` is the one worth remembering: give it a row with a default key and it inserts, give it a row with a key and it updates. `InsertOptions.LoadRecord` appends the engine's output clause so the generated key and defaults come back on the object you passed in.
+The write operations are abstract — a repository implements them for its own table. The row type must derive from `TableRow`:
 
-Batch operations chunk by `Config.MaxParametersPerStatement` so a 50,000-row delete doesn't blow past the provider's parameter limit.
+```csharp
+public partial class DboEmpRow : TableRow
+{
+    public long Id { get; set; }
+    public string Firstname { get; set; } = null!;
+    public string Lastname { get; set; } = null!;
+
+    public override int[] GetOrders(DbDataReader reader) => new[]
+    {
+        reader.GetOrdinal("Id"),
+        reader.GetOrdinal("FirstName"),
+        reader.GetOrdinal("LastName"),
+    };
+
+    public override void SetFields(DbDataReader reader, int[] orders)
+    {
+        if (!reader.IsDBNull(orders[0])) Id = reader.GetInt64(orders[0]);
+        if (!reader.IsDBNull(orders[1])) Firstname = reader.GetString(orders[1]);
+        if (!reader.IsDBNull(orders[2])) Lastname = reader.GetString(orders[2]);
+    }
+}
+
+public partial class DboEmpRepository : TableRepository<DboEmpRow, DboEmp>
+{
+    private readonly Db1Context ctx;
+
+    public DboEmpRepository(Db1Context ctx) => this.ctx = ctx;
+
+    public override SqlNativeContext Context => ctx;
+
+    public override Task<int> InsertAsync(List<DboEmpRow> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)
+        => /* build and run the INSERT */;
+
+    public override Task<int> UpdateAsync(List<DboEmpRow> rows, bool reload = false, CancellationToken ct = default)
+        => /* build and run the UPDATE */;
+
+    public override Task<int> DeleteAsync(List<DboEmpRow> rows, CancellationToken ct = default)
+        => /* build and run the DELETE */;
+}
+```
+
+The read operations — `All`, `Select` — are concrete and work out of the box.
 
 ---
 
 ## Configuration and lifecycle
 
+Configuration lives on the context itself:
+
 ```csharp
-ctx.Config = new SqlNativeContextConfig
+var ctx = new Db1Context(connection)
 {
     IsDevelopMode = true,
-    MaxPacketSize = 1_000_000,
-    MaxParametersPerStatement = 60_000
+    LogSqlCommands = true,
+    OwnsConnection = true,
 };
 ```
 
 | Setting | Default | Used for |
 | --- | --- | --- |
-| `MaxParametersPerStatement` | `60_000` | Batch size for `DeleteByIds` and for the batching in generated entities. |
-| `IsDevelopMode` | `true` on a bare context | Development flag. The core library does not read it yet — see below. |
-| `MaxPacketSize` | `1_000_000` | Development flag. The core library does not read it yet — see below. |
+| `IsDevelopMode` | `false` | Enables row-class generation and turns on SQL logging. |
+| `LogSqlCommands` | `false` | Writes executed commands to the logger, or to the console when no logger is set. |
+| `OwnsConnection` | `false` | When `true`, the connection is closed and disposed with the context. |
+| `Logger` | `null` | The `Microsoft.Extensions.Logging` sink for executed SQL. |
 
 `SqlNativeContext` implements `IDisposable` and `IAsyncDisposable`. It only closes the connection when `OwnsConnection` is `true`, so you can hand it a connection borrowed from an EF `DbContext` or a unit-of-work and leave the lifetime with whoever created it:
 
@@ -467,11 +495,11 @@ ctx.BuildQuery(q => q.Append("SELECT * FROM emp")).ExecuteNonQuery();
 // log: Information: SQL command: SELECT * FROM emp
 ```
 
-The command is written at `Information` level with the SQL as the `Sql` property, so a log sink can pick it out by property name. While `Logger` is `null` the command goes to the console, as it always did.
+The command is written at `Information` level with the SQL as the `Sql` property, so a log sink can pick it out by property name. While `Logger` is `null` the command goes to the console.
 
-What gets written is the command text with parameters already substituted — numeric and boolean parameters are inlined as literals, everything else stays a `@parameter` placeholder. Treat the log as sensitive if your inline values are.
+What gets written is the command text with the parameter *placeholders* still in place — every value is bound, so nothing is inlined. Treat the log as sensitive anyway, because the table and column names are in it.
 
-Whether anything is written at all is controlled by `LogSqlCommands` on the config (`IsDevelopMode` turns it on too). The `SqlNative.AspNetCore` package wires the host's logger into the context for you.
+Whether anything is written at all is controlled by `LogSqlCommands` on the context (`IsDevelopMode` turns it on too). The `SqlNative.AspNetCore` package wires the host's logger into the context for you.
 
 ---
 
@@ -486,7 +514,7 @@ SqlNative has no provider dependency. You supply the `DbConnection`; the table a
 | PostgreSQL | `PostgresTableStructure` | `SqlNative.PostgresFunc` |
 | Oracle | `OracleTableStructure` | — |
 
-The core `SqlFunctions` class currently exposes `SqlFunctions.NULL`; the per-engine catalogs add the rest of the dialect's built-in functions.
+The core `SqlFunctions` class currently exposes `SqlFunctions.NULL` and `SqlFunctions.CList`; the per-engine catalogs add the rest of the dialect's built-in functions.
 
 ---
 
@@ -505,10 +533,11 @@ The core `SqlFunctions` class currently exposes `SqlFunctions.NULL`; the per-eng
 
 Worth knowing before you build on this:
 
-- **Query execution is synchronous or asynchronous — your choice.** `Execute`, `ExecuteScalar` and `ExecuteNonQuery` have `Async` counterparts (`ExecuteAsync`, `ExecuteScalarAsync`, `ExecuteNonQueryAsync`) that take a `CancellationToken` and use the provider's real async I/O. The synchronous methods delegate to them, so both paths share one implementation. The delete helpers and the `DbEntity` members have async counterparts too.
-- **Every executed command is written to the console.** `Query.CreateCommand` calls `Console.WriteLine(command.CommandText)` unconditionally. This is exactly what `IsDevelopMode` is meant to gate, and it is not yet wired up — until it is, plan for that output in production.
-- **`Limit` / `Offset` are emitted verbatim** as `LIMIT` / `OFFSET`, which is MySQL and PostgreSQL syntax but not SQL Server's (`OFFSET … ROWS FETCH NEXT … ROWS ONLY`). Use `Append` if you need the other spelling.
-- **Inlined parameters are not escaped.** See [How parameters are handled](#how-parameters-are-handled).
+- **Every execution method has an `Async` counterpart.** `Execute`, `ExecuteScalar` and `ExecuteNonQuery` have `ExecuteAsync`, `ExecuteScalarAsync` and `ExecuteNonQueryAsync` that take a `CancellationToken` and use the provider's real async I/O. The synchronous methods delegate to them, so both paths share one implementation. The `TableRepository` members have async counterparts too.
+- **There is no `Select`/`Insert`/`Update`/`Delete` builder on the context.** The query surface is `BuildQuery`, and the CRUD surface is `TableRepository`. The model-based builders (`SelectModel`, `InsertModel`, `UpdateModel`, the join types) are not part of this package.
+- **The `Query` builder does not add `LIMIT` / `OFFSET`.** Use `Append` to write the clause your engine wants — SQL Server spells it `OFFSET … ROWS FETCH NEXT … ROWS ONLY`.
+- **`QueryPart ==` only emits `IS NULL` for the lower-case literal `"null"`.** `SqlFunctions.NULL` is upper case, so it produces `= NULL`.
+- **Parameters are always bound**, never inlined — so numeric values are escaped by the provider. See [How parameters are handled](#how-parameters-are-handled).
 
 ## License
 
