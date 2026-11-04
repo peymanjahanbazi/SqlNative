@@ -253,28 +253,37 @@ var all = ctx.Emp.All();
 ### Insert
 
 ```csharp
-var affected = ctx.Emp.Insert(row, InsertOptions.SkipPrimaryKey);
+var affected = ctx.Emp.Insert(row, OperationOptions.SkipPrimaryKey);
 var affectedMany = ctx.Emp.Insert(rows);
 ```
 
 The insert runs immediately and returns the affected count. `InsertAsync` is the awaitable counterpart.
 
-`InsertOptions` controls the primary key and whether the row is read back:
+`OperationOptions` controls the primary key and whether the row is read back:
 
 | Option | Effect |
 | --- | --- |
 | `SkipPrimaryKey` | Omits the primary key from the INSERT. The default. |
 | `LoadRecord` | Reads the inserted row back and copies it onto the object you passed in. |
 | `LoadAndSkip` | Both — omits the key and reads the row back. |
+| `None` | Inserts the primary key as-is and does not read the row back. |
 
 ### Update
 
 ```csharp
-var affected = ctx.Emp.Update(row, reload: true);
+var affected = ctx.Emp.Update(row, OperationOptions.LoadRecord);
 var affectedMany = ctx.Emp.Update(rows);
 ```
 
-`reload: true` re-reads the row afterwards, so database-side defaults and triggers land on your object.
+`LoadRecord` (or `LoadAndSkip`) re-reads the row afterwards, so database-side defaults and triggers land on your object. `None` — the default — just updates.
+
+### Insert or update
+
+```csharp
+var affected = ctx.Emp.InsertOrUpdate(rows, OperationOptions.LoadRecord);
+```
+
+Rows whose primary key is not set — every key column null or the CLR default — are inserted; the rest are updated. Do the split with `IsPrimaryKeySet` by hand if you need finer control. Composite (multi-column) primary keys are supported: the key counts as set only when every key column is set. Tables without a primary key are not supported.
 
 ### Delete
 
@@ -400,15 +409,17 @@ ctx.Emp.All()                                             // List<Row>
 ctx.Emp.AllAsync(ct)
 ctx.Emp.Select(e => $"{e.Deptid} = @deptid", new { deptid = 4 })
 ctx.Emp.SelectAsync(e => $"{e.Deptid} = @deptid", new { deptid = 4 }, ct)
-ctx.Emp.Insert(row, InsertOptions.SkipPrimaryKey)        // or LoadRecord / LoadAndSkip / both
-ctx.Emp.InsertAsync(row, InsertOptions.SkipPrimaryKey, ct)
-ctx.Emp.Update(row, reload: true)
-ctx.Emp.UpdateAsync(row, reload: true, ct)
+ctx.Emp.Insert(row, OperationOptions.SkipPrimaryKey)     // or LoadRecord / LoadAndSkip / None
+ctx.Emp.InsertAsync(row, OperationOptions.SkipPrimaryKey, ct)
+ctx.Emp.Update(row, OperationOptions.LoadRecord)
+ctx.Emp.UpdateAsync(row, OperationOptions.LoadRecord, ct)
+ctx.Emp.InsertOrUpdate(rows, OperationOptions.LoadRecord)
+ctx.Emp.InsertOrUpdateAsync(rows, OperationOptions.LoadRecord, ct)
 ctx.Emp.Delete(row)
 ctx.Emp.DeleteAsync(row, ct)
 ```
 
-The write operations are abstract — a repository implements them for its own table. The row type must derive from `TableRow`:
+The write operations are abstract — a repository implements them for its own table, together with the `IsPrimaryKeySet` predicate that `InsertOrUpdate` uses for its insert/update split (for composite keys, every key column must be set). The row type must derive from `TableRow`:
 
 ```csharp
 public partial class DboEmpRow : TableRow
@@ -440,10 +451,10 @@ public partial class DboEmpRepository : TableRepository<DboEmpRow, DboEmp>
 
     public override SqlNativeContext Context => ctx;
 
-    public override Task<int> InsertAsync(List<DboEmpRow> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)
+    public override Task<int> InsertAsync(List<DboEmpRow> rows, OperationOptions options = OperationOptions.SkipPrimaryKey, CancellationToken ct = default)
         => /* build and run the INSERT */;
 
-    public override Task<int> UpdateAsync(List<DboEmpRow> rows, bool reload = false, CancellationToken ct = default)
+    public override Task<int> UpdateAsync(List<DboEmpRow> rows, OperationOptions options = OperationOptions.None, CancellationToken ct = default)
         => /* build and run the UPDATE */;
 
     public override Task<int> DeleteAsync(List<DboEmpRow> rows, CancellationToken ct = default)

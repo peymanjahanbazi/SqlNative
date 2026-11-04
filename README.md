@@ -327,10 +327,10 @@ var book = new BooksRow
     Summary = "A guide to the craft."
 };
 
-ctx.Books.Insert(book, InsertOptions.LoadAndSkip);
+ctx.Books.Insert(book, OperationOptions.LoadAndSkip);
 ```
 
-`LoadAndSkip` omits the primary key from the INSERT and reads the row back, so the object you passed in comes back populated. The other options are `SkipPrimaryKey` (the default) and `LoadRecord`.
+`LoadAndSkip` omits the primary key from the INSERT and reads the row back, so the object you passed in comes back populated. The other options are `SkipPrimaryKey` (the default), `LoadRecord` and `None`.
 
 The same insert without the repository — still type-checked against the table:
 
@@ -362,10 +362,10 @@ ctx.Books.Insert(rows);
 
 ```csharp
 book.PublishYear = 2000;
-ctx.Books.Update(book, reload: true);
+ctx.Books.Update(book, OperationOptions.LoadRecord);
 ```
 
-`reload: true` re-reads the row afterwards, so database-side defaults and triggers land on your object. The generated `UPDATE` sets every non-key column and matches on the primary key:
+`LoadRecord` (or `LoadAndSkip`) re-reads the row afterwards, so database-side defaults and triggers land on your object; `None` — the default — just updates. The generated `UPDATE` sets every non-key column and matches on the primary key:
 
 ```sql
 UPDATE books
@@ -376,7 +376,13 @@ WHERE id = @Key
 Update a list and it is batched:
 
 ```csharp
-ctx.Books.Update(rows, reload: true);
+ctx.Books.Update(rows, OperationOptions.LoadRecord);
+```
+
+To insert or update in one call, `InsertOrUpdate` sends the rows whose primary key is unset (null or the CLR default for the key — composite keys supported) to `Insert`, and the rest to `Update`, batching as usual:
+
+```csharp
+ctx.Books.InsertOrUpdate(rows, OperationOptions.LoadRecord);
 ```
 
 The raw form works the same way:

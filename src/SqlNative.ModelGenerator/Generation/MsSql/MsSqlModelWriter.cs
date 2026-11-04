@@ -261,6 +261,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
         WriteInsert(builder, className, rowClassName, primaryKeys, columns, helper, isView);
         builder.AppendLine();
         WriteUpdate(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns, isView);
+        builder.AppendLine();
+        WriteIsPrimaryKeySet(builder, rowClassName, primaryKeys);
 
         builder.AppendLine("}");
     }
@@ -355,8 +357,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
 
         builder.AppendLine(
             isView
-                ? $"    public override Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)"
-                : $"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, InsertOptions options = InsertOptions.SkipPrimaryKey, CancellationToken ct = default)");
+                ? $"    public override Task<int> InsertAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.SkipPrimaryKey, CancellationToken ct = default)"
+                : $"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (columns.Count == 0 || isView)
         {
@@ -371,8 +373,8 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
-            builder.AppendLine("        var skipPrimaryKey = options == InsertOptions.SkipPrimaryKey || options == InsertOptions.LoadAndSkip;");
-            builder.AppendLine("        var loadRecord = options == InsertOptions.LoadRecord || options == InsertOptions.LoadAndSkip;");
+            builder.AppendLine("        var skipPrimaryKey = options == OperationOptions.SkipPrimaryKey || options == OperationOptions.LoadAndSkip;");
+            builder.AppendLine("        var loadRecord = options == OperationOptions.LoadRecord || options == OperationOptions.LoadAndSkip;");
             builder.AppendLine();
             if (!hasPrimaryKey)
             {
@@ -480,7 +482,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             ? "throw new NotImplementedException(\"UpdateAsync is not supported: the object is a view and is read-only.\");"
             : "throw new NotImplementedException();";
 
-        builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, bool reload = false, CancellationToken ct = default)");
+        builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.None, CancellationToken ct = default)");
         builder.AppendLine("    {");
         if (!canUpdate)
         {
@@ -493,6 +495,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            return 0;");
             builder.AppendLine("        }");
             builder.AppendLine();
+            builder.AppendLine("        var reload = options == OperationOptions.LoadRecord || options == OperationOptions.LoadAndSkip;");
             WriteUpdateRowsBody(builder, className, rowClassName, primaryKeys, updateColumns, helper, columns);
         }
 
@@ -625,5 +628,41 @@ internal sealed class MsSqlModelWriter : IModelWriter
         }
 
         return "$\"" + string.Join(", ", columns.Select(c => "{e." + c.StructureName + "}")) + "\"";
+    }
+
+    /// <summary>
+    /// Writes the <c>IsPrimaryKeySet</c> override for the generated repository. The primary key
+    /// counts as set when every key column holds a value that is neither <c>null</c> nor the
+    /// CLR default value, so single-column and composite (multi-column) keys are both supported.
+    /// </summary>
+    private static void WriteIsPrimaryKeySet(
+        StringBuilder builder,
+        string rowClassName,
+        IReadOnlyList<ColumnModel> primaryKeys)
+    {
+        builder.AppendLine($"    protected override bool IsPrimaryKeySet({rowClassName} item)");
+        builder.AppendLine("    {");
+
+        if (primaryKeys.Count == 0)
+        {
+            builder.AppendLine("        // The table has no primary key, so the key is never considered set.");
+            builder.AppendLine("        return false;");
+        }
+        else
+        {
+            for (var i = 0; i < primaryKeys.Count; i++)
+            {
+                var key = primaryKeys[i];
+                var condition = MsSqlClrTypeMapper.IsReferenceType(key.ClrType)
+                    ? $"item.{key.RowName} != null"
+                    : $"item.{key.RowName} != default";
+                var end = i == primaryKeys.Count - 1 ? ";" : string.Empty;
+                builder.AppendLine(i == 0
+                    ? $"        return {condition}{end}"
+                    : $"            && {condition}{end}");
+            }
+        }
+
+        builder.AppendLine("    }");
     }
 }

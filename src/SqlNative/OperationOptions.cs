@@ -3,8 +3,10 @@ namespace SqlNative;
 /// <summary>
 /// Specifies how an inserted record is handled and whether its primary key is included.
 /// </summary>
-public enum InsertOptions
+public enum OperationOptions
 {
+    None = 0,
+
     /// <summary>Loads the inserted record and includes its generated primary key.</summary>
     LoadRecord = 1,
 
