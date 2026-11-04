@@ -198,24 +198,32 @@ public class Query
         [CallerMemberName] string member = "")
     {
         if (!GenerateModel) return this;
-        string? dir = Path.GetDirectoryName(file);
-        string fileName = Path.GetFileNameWithoutExtension(file);
-        Type type = typeof(T);
-        if (string.IsNullOrEmpty(ns))
-            ns = type.Namespace;
-        string modelFileName;
-        if (className == "")
+        try
         {
-            className = fileName + member + "Model";
-            modelFileName = fileName + "." + member + "Model.cs";
+            string? dir = Path.GetDirectoryName(file);
+            string fileName = Path.GetFileNameWithoutExtension(file);
+            Type type = typeof(T);
+            if (string.IsNullOrEmpty(ns))
+                ns = type.Namespace ?? "";
+            string modelFileName;
+            if (className == "")
+            {
+                className = fileName + member + "Model";
+                modelFileName = fileName + "." + member + "Model.cs";
+            }
+            else
+            {
+                modelFileName = fileName + "." + className + ".cs";
+            }
+            using var command = CreateCommand();
+            using var reader = command.ExecuteReader();
+            QueryModelGenerator.Model(reader, className, ns ?? "", Path.Combine(dir, modelFileName));
         }
-        else
+        catch (Exception ex)
         {
-            modelFileName = fileName + "." + className + ".cs";
+            if (Logger is not null)
+                Logger.LogError(ex, "Error occurred while generating model for type {Type}", typeof(T));
         }
-        using var command = CreateCommand();
-        using var reader = command.ExecuteReader();
-        QueryModelGenerator.Model(reader, className, ns ?? "", Path.Combine(dir, modelFileName));
         return this;
     }
 
