@@ -306,7 +306,7 @@ both paths run the same code.
 | --- | --- |
 | `SelectAsync(Func<Countries, string> predicate, object parameters, CancellationToken ct)` | `SELECT {e.Star} FROM {e}`, plus a `WHERE` when the predicate returns a non-empty string. Calls `.ExecuteAsync<CountriesRow>(ct)`. |
 | `InsertAsync(row, InsertOptions, CancellationToken ct)` | Builds an `InsertModel`, runs it, and — when asked — re-reads the row and copies every field back onto the object you passed in. |
-| `InsertAsync(List<row>, InsertOptions, CancellationToken ct)` | One multi-row `INSERT` with `@p1, @p2, …` parameters. With `LoadRecord` it falls back to looping single inserts, because the reload is per-row. |
+| `InsertAsync(List<row>, InsertOptions, CancellationToken ct)` | One multi-row `INSERT` with `@p1, @p2, …` parameters. With `LoadRecord` it falls back to looping single inserts, because the reload is per-row. On MySQL, a table with an auto-increment key behaves the same way when `LoadRecord` is used; without `LoadRecord` the rows are always inserted with one multi-row `INSERT`. |
 | `UpdateAsync(row, bool reload, CancellationToken ct)` | `SET` every non-key column, `WHERE {e.Id} = @Key`. With `reload`, re-reads by key and copies the result back. |
 | `UpdateAsync(List<row>, bool reload, CancellationToken ct)` | Chunks the list and delegates to `UpdateBatchAsync`. With `reload`, re-reads all keys in one `IN (…)` query and matches results back by key. |
 | `DeleteAsync(row, CancellationToken ct)` | `ctx.DeleteByIdAsync<Countries, long>(row.Key, ct)`. |
@@ -339,7 +339,7 @@ both paths run the same code.
 | `oracle` | `RETURNING *` on the `INSERT`/`UPDATE` itself. |
 | `mysql` | A second `SELECT … WHERE {t.Id} = LAST_INSERT_ID()`. |
 
-MySQL is the outlier because it has no `RETURNING` equivalent — so a MySQL `InsertAsync(..., LoadRecord)` is **two** round trips, not one.
+MySQL is the outlier because it has no `RETURNING` equivalent — so a MySQL `InsertAsync(..., LoadRecord)` is **two** round trips, not one. A table with an auto-increment key keeps that behaviour for the reload path, because `LAST_INSERT_ID()` identifies one row at a time; the path that does not reload the rows uses one multi-row `INSERT` instead of one statement per row.
 
 **Batching.** `UpdateAsync(List<row>)` reads `ctx.Config.MaxParametersPerStatement` (default `60_000`) and divides by the number of parameters per row to get a chunk size, so a 50,000-row update never exceeds the provider's parameter limit:
 
@@ -458,6 +458,16 @@ UPDATE <table> JOIN (<source>) t2 ON <table>.Id = t2.Id SET <table>.Col = t2.Col
 ```
 
 `UPDATE … JOIN` is MySQL-only. SQL Server wants `UPDATE t SET … FROM t JOIN (…), PostgreSQL wants `UPDATE t SET … FROM (…) t2 WHERE …`, and Oracle wants `MERGE INTO t USING (…) t2 ON … WHEN MATCHED THEN UPDATE SET …`. Only the MySQL writer's `INNER JOIN` is valid MySQL, and the derived table it joins (a chain of `SELECT … UNION ALL SELECT …`) is compatible with MySQL 5.7 — no `ROW(…)` constructor is used anymore.
+
+The SQL Server writer has been fixed and now emits the T-SQL form, with the `OUTPUT` clause between `SET` and `FROM` as the dialect requires:
+
+```sql
+UPDATE <alias> SET <alias>.<col> = t2.<col> OUTPUT INSERTED.*
+FROM <table> AS <alias>
+INNER JOIN (<source>) AS t2 ON <alias>.<key> = t2.<key>
+```
+
+PostgreSQL and Oracle still emit the MySQL syntax described above.
 
 **3. MySQL batch insert needs MySQL 8.0.19+.** Same reason — the `VALUES ROW(…)` derived-table form. On older servers, use the `Update(List<row>)` path or issue the inserts yourself.
 
