@@ -388,7 +388,7 @@ internal sealed class MySqlModelWriter : IModelWriter
                 builder.AppendLine($"                await Context.BuildQuery<{className}>((q, e) => q");
                 builder.AppendLine("                    .Config(() => e.DisableAlias = true)");
                 builder.AppendLine("                    .Append($\"INSERT INTO {e}\")");
-                builder.AppendLine($"                    .Append($\"{{(skipPrimaryKey ? $\"{withoutPkColumnsText}\" : $\"{{e.{pkColumn.StructureName}}}, {withoutPkColumnsText}\")}}\")");
+                builder.AppendLine($"                    .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsText}\" : $\"{{e.{pkColumn.StructureName}}}, {withoutPkColumnsText}\")}})\")");
                 builder.AppendLine($"                    .Append($\"{{(skipPrimaryKey ? $\"VALUES ({withoutPkValues})\" : $\"VALUES (@{pkColumn.RowName}, {withoutPkValues})\")}}\")");
                 builder.AppendLine($"                    .SetParameters(new {{ {pkColumn.RowName} = item.{pkColumn.RowName}, {withoutPkParameters} }})");
                 builder.AppendLine("                    ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
@@ -432,147 +432,147 @@ internal sealed class MySqlModelWriter : IModelWriter
                 builder.AppendLine($"        return await Context.BuildQuery<{className}>((q, e) => q");
                 builder.AppendLine("            .Config(() => e.DisableAlias = true)");
                 builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
-                builder.AppendLine($"            .Append($\"{{(skipPrimaryKey ? $\"{withoutPkColumnsText}\" : $\"{{e.{pkColumn.StructureName}}}, {withoutPkColumnsText}\")}}\")");
+                builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsText}\" : $\"{{e.{pkColumn.StructureName}}}, {withoutPkColumnsText}\")}})\")");
                 builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
                 builder.AppendLine("            .SetParameters(parameters)");
                 builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
             }
             else
             {
-            builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
-            builder.AppendLine("        var tuples = new List<string>();");
-            builder.AppendLine("        var index = 1;");
-            builder.AppendLine();
-            builder.AppendLine("        foreach (var item in rows)");
-            builder.AppendLine("        {");
-            builder.AppendLine("            var placeholders = new List<string>();");
-            builder.AppendLine();
-            var pkColumns = allColumns.Where(x => x.Column.IsPrimaryKey).ToArray();
-            var pIndex = 0;
-            if (pkColumns.Length > 0)
-            {
-                builder.AppendLine("            if (!skipPrimaryKey)");
-                builder.AppendLine("            {");
-                foreach (var pk in pkColumns)
+                builder.AppendLine("        var parameters = new Dictionary<string, object?>();");
+                builder.AppendLine("        var tuples = new List<string>();");
+                builder.AppendLine("        var index = 1;");
+                builder.AppendLine();
+                builder.AppendLine("        foreach (var item in rows)");
+                builder.AppendLine("        {");
+                builder.AppendLine("            var placeholders = new List<string>();");
+                builder.AppendLine();
+                var pkColumns = allColumns.Where(x => x.Column.IsPrimaryKey).ToArray();
+                var pIndex = 0;
+                if (pkColumns.Length > 0)
                 {
-                    builder.AppendLine($"                var p{pIndex} = \"@p\" + index++;");
-                    builder.AppendLine($"                parameters[p{pIndex}] = item.{pk.RowName};");
-                    builder.AppendLine($"                placeholders.Add(p{pIndex});");
+                    builder.AppendLine("            if (!skipPrimaryKey)");
+                    builder.AppendLine("            {");
+                    foreach (var pk in pkColumns)
+                    {
+                        builder.AppendLine($"                var p{pIndex} = \"@p\" + index++;");
+                        builder.AppendLine($"                parameters[p{pIndex}] = item.{pk.RowName};");
+                        builder.AppendLine($"                placeholders.Add(p{pIndex});");
+                        pIndex++;
+                    }
+
+                    builder.AppendLine("            }");
+                }
+
+                for (var i = 0; i < columnsWithoutPk.Length; i++)
+                {
+                    var c = columnsWithoutPk[i];
+                    builder.AppendLine($"            var p{pIndex} = \"@p\" + index++;");
+                    builder.AppendLine($"            parameters[p{pIndex}] = item.{c.RowName};");
+                    builder.AppendLine($"            placeholders.Add(p{pIndex});");
                     pIndex++;
                 }
 
-                builder.AppendLine("            }");
-            }
-
-            for (var i = 0; i < columnsWithoutPk.Length; i++)
-            {
-                var c = columnsWithoutPk[i];
-                builder.AppendLine($"            var p{pIndex} = \"@p\" + index++;");
-                builder.AppendLine($"            parameters[p{pIndex}] = item.{c.RowName};");
-                builder.AppendLine($"            placeholders.Add(p{pIndex});");
-                pIndex++;
-            }
-
-            builder.AppendLine();
-            builder.AppendLine("            tuples.Add(\"(\" + string.Join(\", \", placeholders) + \")\");");
-            builder.AppendLine("        }");
-            builder.AppendLine();
-
-            var allColumnsLambdaExpr = string.Join(", ", allColumns.Select(c => "{e." + c.StructureName + "}"));
-            var withoutPkColumnsLambdaExpr = string.Join(", ", columnsWithoutPk.Select(c => "{e." + c.StructureName + "}"));
-
-            builder.AppendLine($"        var affected = await Context.BuildQuery<{className}>((q, e) => q");
-            builder.AppendLine("            .Config(() => e.DisableAlias = true)");
-            builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
-            builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
-            builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
-            builder.AppendLine("            .SetParameters(parameters)");
-            builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
-            builder.AppendLine();
-
-            if (hasPrimaryKey)
-            {
-                var pkStructure = primaryKeys[0].StructureName;
-                builder.AppendLine("        if (loadRecord)");
-                builder.AppendLine("        {");
-                builder.AppendLine("            var reloadParameters = new Dictionary<string, object?>();");
-                builder.AppendLine("            var reloadParts = new List<string>();");
-                builder.AppendLine("            var reloadIndex = 1;");
-                builder.AppendLine("            foreach (var item in rows)");
-                builder.AppendLine("            {");
-                if (primaryKeys.Count == 1)
-                {
-                    builder.AppendLine("                var p = \"@p\" + reloadIndex++;");
-                    builder.AppendLine($"                reloadParameters[p] = item.{primaryKeys[0].RowName};");
-                    builder.AppendLine("                reloadParts.Add(p);");
-                }
-                else
-                {
-                    builder.AppendLine("                var conditions = new List<string>();");
-                    builder.AppendLine("                var conditionIndex = 0;");
-                    foreach (var key in primaryKeys)
-                    {
-                        builder.AppendLine($"                var p{key.StructureName} = \"@p\" + (reloadIndex + conditionIndex++);");
-                        builder.AppendLine($"                parameters[p{key.StructureName}] = item.{key.RowName};");
-                        var quotedKeyName = helper.WrapObjectName(key.Column.Name);
-                        builder.AppendLine($"                conditions.Add(\"{quotedKeyName.Replace("\"", "\\\"")}\" + \" = \" + p{key.StructureName});");
-                    }
-                    builder.AppendLine("                reloadIndex += conditionIndex;");
-                    builder.AppendLine("                reloadParts.Add(\"(\" + string.Join(\" AND \", conditions) + \")\");");
-                }
-                builder.AppendLine("            }");
                 builder.AppendLine();
-                builder.AppendLine($"            var loaded = await Context.BuildQuery<{className}>((q, e) => q");
-                builder.AppendLine("                .Append($\"SELECT {e.Star}\")");
-                builder.AppendLine("                .Append($\"FROM {e}\")");
-                if (primaryKeys.Count == 1)
-                {
-                    builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} IN (\" + string.Join(\", \", reloadParts) + \")\")");
-                }
-                else
-                {
-                    builder.AppendLine("                .Append($\"WHERE \" + string.Join(\" OR \", reloadParts))");
-                }
-                builder.AppendLine("                .SetParameters(reloadParameters)");
-                builder.AppendLine($"            ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
-                builder.AppendLine();
-                var isSingleKey = primaryKeys.Count == 1;
-                var keyType = isSingleKey ? primaryKeys[0].ClrType : string.Join(", ", primaryKeys.Select(k => k.ClrType));
-                var itemKey = string.Join(", ", primaryKeys.Select(k => "item." + k.RowName));
-                var srcKey = string.Join(", ", primaryKeys.Select(k => "src." + k.RowName));
-                if (isSingleKey)
-                {
-                    builder.AppendLine($"            var byKey = new Dictionary<{keyType}, {rowClassName}>(rows.Count);");
-                    builder.AppendLine("            foreach (var src in loaded)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                byKey[src.{primaryKeys[0].RowName}] = src;");
-                    builder.AppendLine("            }");
-                    builder.AppendLine();
-                    builder.AppendLine("            foreach (var item in rows)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                if (byKey.TryGetValue(item.{primaryKeys[0].RowName}, out var source))");
-                }
-                else
-                {
-                    builder.AppendLine($"            var byKey = new Dictionary<({keyType}), {rowClassName}>(rows.Count);");
-                    builder.AppendLine("            foreach (var src in loaded)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                byKey[({srcKey})] = src;");
-                    builder.AppendLine("            }");
-                    builder.AppendLine();
-                    builder.AppendLine("            foreach (var item in rows)");
-                    builder.AppendLine("            {");
-                    builder.AppendLine($"                if (byKey.TryGetValue(({itemKey}), out var source))");
-                }
-                builder.AppendLine("                {");
-                WriteFieldCopies(builder, "item", "source", columns);
-                builder.AppendLine("                }");
-                builder.AppendLine("            }");
+                builder.AppendLine("            tuples.Add(\"(\" + string.Join(\", \", placeholders) + \")\");");
                 builder.AppendLine("        }");
                 builder.AppendLine();
-            }
 
-            builder.AppendLine("        return affected;");
+                var allColumnsLambdaExpr = string.Join(", ", allColumns.Select(c => "{e." + c.StructureName + "}"));
+                var withoutPkColumnsLambdaExpr = string.Join(", ", columnsWithoutPk.Select(c => "{e." + c.StructureName + "}"));
+
+                builder.AppendLine($"        var affected = await Context.BuildQuery<{className}>((q, e) => q");
+                builder.AppendLine("            .Config(() => e.DisableAlias = true)");
+                builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
+                builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
+                builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
+                builder.AppendLine("            .SetParameters(parameters)");
+                builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
+                builder.AppendLine();
+
+                if (hasPrimaryKey)
+                {
+                    var pkStructure = primaryKeys[0].StructureName;
+                    builder.AppendLine("        if (loadRecord)");
+                    builder.AppendLine("        {");
+                    builder.AppendLine("            var reloadParameters = new Dictionary<string, object?>();");
+                    builder.AppendLine("            var reloadParts = new List<string>();");
+                    builder.AppendLine("            var reloadIndex = 1;");
+                    builder.AppendLine("            foreach (var item in rows)");
+                    builder.AppendLine("            {");
+                    if (primaryKeys.Count == 1)
+                    {
+                        builder.AppendLine("                var p = \"@p\" + reloadIndex++;");
+                        builder.AppendLine($"                reloadParameters[p] = item.{primaryKeys[0].RowName};");
+                        builder.AppendLine("                reloadParts.Add(p);");
+                    }
+                    else
+                    {
+                        builder.AppendLine("                var conditions = new List<string>();");
+                        builder.AppendLine("                var conditionIndex = 0;");
+                        foreach (var key in primaryKeys)
+                        {
+                            builder.AppendLine($"                var p{key.StructureName} = \"@p\" + (reloadIndex + conditionIndex++);");
+                            builder.AppendLine($"                parameters[p{key.StructureName}] = item.{key.RowName};");
+                            var quotedKeyName = helper.WrapObjectName(key.Column.Name);
+                            builder.AppendLine($"                conditions.Add(\"{quotedKeyName.Replace("\"", "\\\"")}\" + \" = \" + p{key.StructureName});");
+                        }
+                        builder.AppendLine("                reloadIndex += conditionIndex;");
+                        builder.AppendLine("                reloadParts.Add(\"(\" + string.Join(\" AND \", conditions) + \")\");");
+                    }
+                    builder.AppendLine("            }");
+                    builder.AppendLine();
+                    builder.AppendLine($"            var loaded = await Context.BuildQuery<{className}>((q, e) => q");
+                    builder.AppendLine("                .Append($\"SELECT {e.Star}\")");
+                    builder.AppendLine("                .Append($\"FROM {e}\")");
+                    if (primaryKeys.Count == 1)
+                    {
+                        builder.AppendLine($"                .Append($\"WHERE {{e.{pkStructure}}} IN (\" + string.Join(\", \", reloadParts) + \")\")");
+                    }
+                    else
+                    {
+                        builder.AppendLine("                .Append($\"WHERE \" + string.Join(\" OR \", reloadParts))");
+                    }
+                    builder.AppendLine("                .SetParameters(reloadParameters)");
+                    builder.AppendLine($"            ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
+                    builder.AppendLine();
+                    var isSingleKey = primaryKeys.Count == 1;
+                    var keyType = isSingleKey ? primaryKeys[0].ClrType : string.Join(", ", primaryKeys.Select(k => k.ClrType));
+                    var itemKey = string.Join(", ", primaryKeys.Select(k => "item." + k.RowName));
+                    var srcKey = string.Join(", ", primaryKeys.Select(k => "src." + k.RowName));
+                    if (isSingleKey)
+                    {
+                        builder.AppendLine($"            var byKey = new Dictionary<{keyType}, {rowClassName}>(rows.Count);");
+                        builder.AppendLine("            foreach (var src in loaded)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                byKey[src.{primaryKeys[0].RowName}] = src;");
+                        builder.AppendLine("            }");
+                        builder.AppendLine();
+                        builder.AppendLine("            foreach (var item in rows)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                if (byKey.TryGetValue(item.{primaryKeys[0].RowName}, out var source))");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"            var byKey = new Dictionary<({keyType}), {rowClassName}>(rows.Count);");
+                        builder.AppendLine("            foreach (var src in loaded)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                byKey[({srcKey})] = src;");
+                        builder.AppendLine("            }");
+                        builder.AppendLine();
+                        builder.AppendLine("            foreach (var item in rows)");
+                        builder.AppendLine("            {");
+                        builder.AppendLine($"                if (byKey.TryGetValue(({itemKey}), out var source))");
+                    }
+                    builder.AppendLine("                {");
+                    WriteFieldCopies(builder, "item", "source", columns);
+                    builder.AppendLine("                }");
+                    builder.AppendLine("            }");
+                    builder.AppendLine("        }");
+                    builder.AppendLine();
+                }
+
+                builder.AppendLine("        return affected;");
             }
         }
 
