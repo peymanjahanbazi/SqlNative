@@ -341,6 +341,8 @@ both paths run the same code.
 
 MySQL is the outlier because it has no `RETURNING` equivalent — so a MySQL `InsertAsync(..., LoadRecord)` is **two** round trips, not one. A table with an auto-increment key keeps that behaviour for the reload path, because `LAST_INSERT_ID()` identifies one row at a time; the path that does not reload the rows uses one multi-row `INSERT` instead of one statement per row.
 
+On MySQL, the `SkipPrimaryKey` flag is honoured on both paths. When the key is **not** skipped (`OperationOptions.None` and `OperationOptions.LoadRecord`), the key column is part of the `INSERT` and the row is re-read by that supplied key; when it **is** skipped (`OperationOptions.SkipPrimaryKey` and `OperationOptions.LoadAndSkip`), the key is left out and the row is re-read by `LAST_INSERT_ID()`.
+
 **Batching.** `UpdateAsync(List<row>)` reads `ctx.Config.MaxParametersPerStatement` (default `60_000`) and divides by the number of parameters per row to get a chunk size, so a 50,000-row update never exceeds the provider's parameter limit:
 
 ```csharp
