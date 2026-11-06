@@ -3,8 +3,6 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
-/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -17,6 +15,65 @@ public abstract partial class TableRepository<Row, Table>
     where Row : TableRow, new()
     where Table : TableStructure, new()
 {
+
+    /// <summary>Updates the rows matched by a model describing the statement.</summary>
+    /// <param name="model">
+    /// A function that creates the <see cref="UpdateModel"/> from the table structure.
+    /// The model's <see cref="UpdateModel.Set"/> clause is required; the
+    /// <see cref="UpdateModel.Where"/> clause is optional.
+    /// </param>
+    /// <returns>The number of rows affected.</returns>
+    /// <remarks>
+    /// The generated statement is <c>UPDATE {table} SET {Set} [WHERE {Where}]</c>, where the
+    /// table alias is omitted. The values referenced by <see cref="UpdateModel.Parameters"/>
+    /// are bound as command parameters, never inlined.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The model is <see langword="null"/> or its <see cref="UpdateModel.Set"/> clause is empty.
+    /// </exception>
+    public async Task<int> UpdateAsync(Func<Table, UpdateModel> model)
+    {
+        UpdateModel? modelObject = null;
+        return await Context.BuildQuery<Table>((q, t) => q.Config(() =>
+        {
+            t.DisableAlias = true;
+            modelObject = model(t);
+            if (modelObject == null)
+            {
+                throw new InvalidDataException("Update model is null");
+            }
+            if (string.IsNullOrWhiteSpace(modelObject.Set))
+            {
+                throw new InvalidDataException("Set claude is empty");
+            }
+        })
+        .Append($"UPDATE {t}")
+        .Append($"SET {modelObject?.Set}")
+        .AppendIf(!string.IsNullOrWhiteSpace(modelObject?.Where), $"WHERE {modelObject?.Where}")
+        .SetParameters(modelObject?.Parameters))
+        .ExecuteNonQueryAsync().ConfigureAwait(false);
+
+    }
+
+    /// <summary>Updates the rows matched by a model describing the statement.</summary>
+    /// <param name="model">
+    /// A function that creates the <see cref="UpdateModel"/> from the table structure.
+    /// The model's <see cref="UpdateModel.Set"/> clause is required; the
+    /// <see cref="UpdateModel.Where"/> clause is optional.
+    /// </param>
+    /// <returns>The number of rows affected.</returns>
+    /// <remarks>
+    /// This method blocks on <see cref="UpdateAsync(Func{Table, UpdateModel})"/>.
+    /// Prefer the asynchronous version in asynchronous code.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The model is <see langword="null"/> or its <see cref="UpdateModel.Set"/> clause is empty.
+    /// </exception>
+    public int Update(Func<Table, UpdateModel> model)
+    {
+        return UpdateAsync(model).GetAwaiter().GetResult();
+
+    }
 
     /// <summary>Updates a row.</summary>
     /// <param name="row">The row to update.</param>

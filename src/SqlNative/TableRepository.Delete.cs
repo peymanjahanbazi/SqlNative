@@ -3,8 +3,6 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
-/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths

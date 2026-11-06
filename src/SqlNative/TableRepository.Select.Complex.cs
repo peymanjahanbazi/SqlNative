@@ -5,8 +5,6 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
-/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -19,6 +17,15 @@ public abstract partial class TableRepository<Row, Table>
 {
 
 
+    /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
+    /// <param name="model">The model describing the select statement.</param>
+    /// <param name="q">The query being built.</param>
+    /// <param name="t1">The main table of the statement.</param>
+    /// <returns>The query containing the generated statement.</returns>
+    /// <remarks>
+    /// Each dialect supplies its own implementation, because the clause order and the
+    /// paging syntax differ between engines.
+    /// </remarks>
     abstract internal protected Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1);
 
     /// <summary>

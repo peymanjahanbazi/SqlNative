@@ -3,8 +3,6 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
-/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -54,11 +52,4 @@ public abstract partial class TableRepository<Row, Table>
     {
         return InsertAsync(rows, options).GetAwaiter().GetResult();
     }
-
-    /// <summary>Inserts a list of rows asynchronously.</summary>
-    /// <param name="rows">The rows to insert.</param>
-    /// <param name="options">The insert options.</param>
-    /// <param name="ct">The token used to cancel the command.</param>
-    /// <returns>The number of rows affected.</returns>
-
 }

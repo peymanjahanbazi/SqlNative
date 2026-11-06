@@ -1,9 +1,18 @@
 namespace SqlNative;
 
+/// <summary>
+/// Provides common persistence operations for a MySQL table row and its table structure.
+/// </summary>
+/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
+/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository<Row, Table>
     where Row : TableRow, new()
     where Table : TableStructure, new()
 {
+    /// <summary>Renders a join clause as SQL text.</summary>
+    /// <param name="join">The join to render.</param>
+    /// <returns>The SQL text of the join clause.</returns>
+    /// <exception cref="NotSupportedException">The join type is not supported by this dialect.</exception>
     private string GenerateJoin(JoinClause join)
     {
         if (join is LeftJoin)
@@ -32,6 +41,18 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
         }
     }
 
+    /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
+    /// <param name="model">The model describing the select statement.</param>
+    /// <param name="q">The query being built.</param>
+    /// <param name="t1">The main table of the statement.</param>
+    /// <returns>The query containing the generated statement.</returns>
+    /// <remarks>
+    /// The clauses are emitted in the order <c>SELECT</c>, <c>FROM</c>, joins, <c>WHERE</c>,
+    /// <c>GROUP BY</c>, <c>HAVING</c>, <c>ORDER BY</c>, <c>LIMIT</c> and <c>OFFSET</c>. Empty
+    /// clauses are skipped. When the model has no <see cref="SelectModel.Select"/> expression,
+    /// all columns of the table are selected.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
     internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
         if (model is null)

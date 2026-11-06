@@ -5,6 +5,7 @@ namespace SqlNative;
 /// </summary>
 public enum OperationOptions
 {
+    /// <summary>Includes the primary key and does not read the record back.</summary>
     None = 0,
 
     /// <summary>Loads the inserted record and includes its generated primary key.</summary>

@@ -3,8 +3,6 @@ namespace SqlNative;
 /// <summary>
 /// Provides common persistence operations for a table row and its table structure.
 /// </summary>
-/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
-/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
 /// <remarks>
 /// The asynchronous members are the primary implementation and must be overridden. The
 /// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
@@ -50,7 +48,7 @@ public abstract partial class TableRepository<Row, Table>
     /// This method blocks on <see cref="SelectAsync(Func{Table, string}, object, CancellationToken)"/>.
     /// Prefer the asynchronous version in asynchronous code.
     /// </remarks>
-    public List<Row> Select(Func<Table, string> predicate, object parameters = null)
+    public List<Row> Select(Func<Table, string> predicate, object? parameters = null)
     {
         return SelectAsync(predicate, parameters).GetAwaiter().GetResult();
     }
@@ -60,7 +58,7 @@ public abstract partial class TableRepository<Row, Table>
     /// <param name="parameters">Optional parameter values used by the predicate.</param>
     /// <param name="ct">The token used to cancel the command.</param>
     /// <returns>The selected rows.</returns>
-    public async Task<List<Row>> SelectAsync(Func<Table, string> predicate, object parameters = null, CancellationToken ct = default)
+    public async Task<List<Row>> SelectAsync(Func<Table, string> predicate, object? parameters = null, CancellationToken ct = default)
     {
         var condition = "";
 
