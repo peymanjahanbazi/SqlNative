@@ -9,14 +9,77 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
     where Row : TableRow, new()
     where Table : TableStructure, new()
 {
+    /// <summary>Renders a join clause as SQL text.</summary>
+    /// <param name="join">The join to render.</param>
+    /// <returns>The SQL text of the join clause.</returns>
+    /// <exception cref="NotSupportedException">The join type is not supported by this dialect.</exception>
+    private string GenerateJoin(JoinClause join)
+    {
+        if (join is LeftJoin)
+        {
+            return $"LEFT JOIN {join.Table} ON {join.On}";
+        }
+        else if (join is RightJoin)
+        {
+            return $"RIGHT JOIN {join.Table} ON {join.On}";
+        }
+        else if (join is InnerJoin)
+        {
+            return $"INNER JOIN {join.Table} ON {join.On}";
+        }
+        else if (join is FullJoin)
+        {
+            return $"FULL JOIN {join.Table} ON {join.On}";
+        }
+        else if (join is CrossJoin)
+        {
+            return $"CROSS JOIN {join.Table}";
+        }
+        else
+        {
+            throw new NotSupportedException($"Join type '{join?.GetType().Name ?? "null"}' is not supported.");
+        }
+    }
+
     /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
     /// <param name="model">The model describing the select statement.</param>
     /// <param name="q">The query being built.</param>
     /// <param name="t1">The main table of the statement.</param>
     /// <returns>The query containing the generated statement.</returns>
-    /// <exception cref="NotImplementedException">Always thrown; this dialect is not supported yet.</exception>
+    /// <remarks>
+    /// The clauses are emitted in the order <c>SELECT</c>, <c>FROM</c>, joins, <c>WHERE</c>,
+    /// <c>GROUP BY</c>, <c>HAVING</c>, <c>ORDER BY</c> and the paging clause. Empty clauses are
+    /// skipped. When the model has no <see cref="SelectModel.Select"/> expression, all columns of
+    /// the table are selected.
+    /// </remarks>
+    /// <remarks>
+    /// Oracle has no <c>LIMIT</c>. The rows are paged with the row limiting clause
+    /// <c>OFFSET n ROWS FETCH NEXT m ROWS ONLY</c>, which Oracle accepts with or without an
+    /// <c>ORDER BY</c>.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
     internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
-        throw new NotImplementedException("Not Implemented for Oracle");
+        if (model is null)
+        {
+            throw new ArgumentNullException(nameof(model));
+        }
+        if (string.IsNullOrWhiteSpace(model.Select))
+        {
+            model.Select = t1.Star;
+        }
+        model.From = t1;
+
+        return q
+        .Append($"SELECT {model.Select}")
+        .Append($"FROM {model.From}")
+        .AppendFor(model.Joins, GenerateJoin)
+        .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
+        .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
+        .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
+        .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
+        .AppendIf(model.Offset.HasValue, $"OFFSET {model.Offset} ROWS")
+        .AppendIf(model.Limit.HasValue, $"FETCH NEXT {model.Limit} ROWS ONLY")
+        .SetParameters(model.Parameters);
     }
 }
