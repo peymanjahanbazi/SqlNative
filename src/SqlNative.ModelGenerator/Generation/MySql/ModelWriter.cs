@@ -232,7 +232,7 @@ internal sealed class MySqlModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {repositoryClassName} : TableRepository<{rowClassName}, {className}>");
+            $"public partial class {repositoryClassName} : TableRepositoryMySql<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
@@ -263,7 +263,6 @@ internal sealed class MySqlModelWriter : IModelWriter
             IModelIdentifierHelper helper)
     {
         var hasPrimaryKey = primaryKeys.Count > 0;
-
 
         builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");
@@ -337,7 +336,6 @@ internal sealed class MySqlModelWriter : IModelWriter
         var columnsWithoutPk = columns
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
-
 
         builder.AppendLine($"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");
@@ -589,7 +587,6 @@ internal sealed class MySqlModelWriter : IModelWriter
         IReadOnlyList<ColumnModel> columns)
     {
         var canUpdate = primaryKeys.Count > 0 && updateColumns.Count > 0;
-
 
         builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.None, CancellationToken ct = default)");
         builder.AppendLine("    {");

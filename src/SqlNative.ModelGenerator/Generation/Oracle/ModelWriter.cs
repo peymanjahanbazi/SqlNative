@@ -1,7 +1,5 @@
-using SqlNative.ModelGenerator.Generation;
-using SqlNative.ModelGenerator.Schema;
 using SqlNative.Core;
-using System;
+using SqlNative.ModelGenerator.Schema;
 using System.Text;
 
 namespace SqlNative.ModelGenerator.Generation.Oracle;
@@ -240,7 +238,7 @@ internal sealed class OracleModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {repositoryClassName} : TableRepository<{rowClassName}, {className}>");
+            $"public partial class {repositoryClassName} : TableRepositoryOracle<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
@@ -271,7 +269,6 @@ internal sealed class OracleModelWriter : IModelWriter
             IModelIdentifierHelper helper)
     {
         var hasPrimaryKey = primaryKeys.Count > 0;
-
 
         builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");
@@ -556,6 +553,7 @@ internal sealed class OracleModelWriter : IModelWriter
 
         builder.AppendLine("    }");
     }
+
     private static void WriteUpdate(
         StringBuilder builder,
         string className,
@@ -566,7 +564,6 @@ internal sealed class OracleModelWriter : IModelWriter
         IReadOnlyList<ColumnModel> columns)
     {
         var canUpdate = primaryKeys.Count > 0 && updateColumns.Count > 0;
-
 
         builder.AppendLine($"    public override async Task<int> UpdateAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.None, CancellationToken ct = default)");
         builder.AppendLine("    {");

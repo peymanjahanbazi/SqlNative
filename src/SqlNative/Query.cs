@@ -87,7 +87,7 @@ public class Query
     /// <summary>Replaces the current query parameters with values from an object.</summary>
     /// <param name="parameters">The object whose public properties supply parameter values.</param>
     /// <returns>This query instance.</returns>
-    public Query SetParameters(object parameters)
+    public Query SetParameters(object? parameters)
     {
         this.Parameters.Clear();
         return AddParameters(parameters);
@@ -96,7 +96,7 @@ public class Query
     /// <summary>Adds the specified dictionary to the current query parameters.</summary>
     /// <param name="parameters">The parameters to add.</param>
     /// <returns>This query instance.</returns>
-    public Query AddParameters(Dictionary<string, object?> parameters)
+    public Query AddParameters(Dictionary<string, object?>? parameters)
     {
         if (parameters == null) return this;
         foreach (var kvp in parameters)
@@ -109,7 +109,7 @@ public class Query
     /// <summary>Adds values from an object's public properties to the current query parameters.</summary>
     /// <param name="parameters">The object whose public properties supply parameter values.</param>
     /// <returns>This query instance.</returns>
-    public Query AddParameters(object parameters)
+    public Query AddParameters(object? parameters)
     {
         if (parameters == null) return this;
         if (parameters is Dictionary<string, object?> dict)
@@ -268,7 +268,7 @@ public class Query
     /// <param name="items">The items to process.</param>
     /// <param name="func">The function that generates text for each item.</param>
     /// <returns>This query instance.</returns>
-    public Query AppendFor<T>(List<T> items, Func<T, string> func)
+    public Query AppendFor<T>(List<T>? items, Func<T, string> func)
     {
         return this.AppendFor("", items, func);
     }
@@ -279,8 +279,12 @@ public class Query
     /// <param name="items">The items to process.</param>
     /// <param name="func">The function that generates text for each item.</param>
     /// <returns>This query instance.</returns>
-    public Query AppendFor<T>(string join, List<T> items, Func<T, string> func)
+    public Query AppendFor<T>(string join, List<T>? items, Func<T, string> func)
     {
+        if (items == null || items.Count == 0)
+        {
+            return this;
+        }
         for (int i = 0; i < items.Count; i++)
         {
             if (i > 0) Append(join);

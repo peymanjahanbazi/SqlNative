@@ -1,7 +1,5 @@
-using SqlNative.ModelGenerator.Generation;
-using SqlNative.ModelGenerator.Schema;
 using SqlNative.Core;
-using System;
+using SqlNative.ModelGenerator.Schema;
 using System.Text;
 
 namespace SqlNative.ModelGenerator.Generation.MsSql;
@@ -243,7 +241,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {repositoryClassName} : TableRepository<{rowClassName}, {className}>");
+            $"public partial class {repositoryClassName} : TableRepositoryMsSql<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
@@ -279,7 +277,6 @@ internal sealed class MsSqlModelWriter : IModelWriter
         var throwMessage = isView
             ? "throw new NotImplementedException(\"DeleteAsync is not supported: the object is a view and is read-only.\");"
             : "throw new NotImplementedException();";
-
 
         builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");

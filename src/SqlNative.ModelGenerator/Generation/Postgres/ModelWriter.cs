@@ -1,7 +1,5 @@
-using SqlNative.ModelGenerator.Generation;
-using SqlNative.ModelGenerator.Schema;
 using SqlNative.Core;
-using System;
+using SqlNative.ModelGenerator.Schema;
 using System.Text;
 
 namespace SqlNative.ModelGenerator.Generation.Postgres;
@@ -238,7 +236,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             .ToArray();
 
         builder.AppendLine(
-            $"public partial class {repositoryClassName} : TableRepository<{rowClassName}, {className}>");
+            $"public partial class {repositoryClassName} : TableRepositoryPostgres<{rowClassName}, {className}>");
         builder.AppendLine("{");
         builder.AppendLine($"    private readonly {contextName} ctx;");
         builder.AppendLine();
@@ -269,7 +267,6 @@ internal sealed class PostgresModelWriter : IModelWriter
             IModelIdentifierHelper helper)
     {
         var hasPrimaryKey = primaryKeys.Count > 0;
-
 
         builder.AppendLine($"    public override Task<int> DeleteAsync(List<{rowClassName}> rows, CancellationToken ct = default)");
         builder.AppendLine("    {");
@@ -343,7 +340,6 @@ internal sealed class PostgresModelWriter : IModelWriter
         var columnsWithoutPk = columns
             .Where(c => !c.Column.IsPrimaryKey)
             .ToArray();
-
 
         builder.AppendLine($"    public override async Task<int> InsertAsync(List<{rowClassName}> rows, OperationOptions options = OperationOptions.SkipPrimaryKey, CancellationToken ct = default)");
         builder.AppendLine("    {");

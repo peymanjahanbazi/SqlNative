@@ -1,0 +1,76 @@
+namespace SqlNative;
+
+/// <summary>
+/// Provides common persistence operations for a table row and its table structure.
+/// </summary>
+/// <typeparam name="Row">The row type persisted by this repository.</typeparam>
+/// <typeparam name="Table">The table structure type used by this repository.</typeparam>
+/// <remarks>
+/// The asynchronous members are the primary implementation and must be overridden. The
+/// synchronous members are concrete wrappers that call the asynchronous ones, so both paths
+/// run the same code. The only exceptions are <see cref="AllAsync(CancellationToken)"/>,
+/// <see cref="InsertOrUpdateAsync(List{Row}, OperationOptions, CancellationToken)"/> and
+/// <see cref="IsPrimaryKeySet(Row)"/>, which are concrete because they can be expressed in
+/// terms of the members above them.
+/// </remarks>
+public abstract partial class TableRepository<Row, Table>
+    where Row : TableRow, new()
+    where Table : TableStructure, new()
+{
+
+    /// <summary>Returns all rows from the table.</summary>
+    /// <returns>All rows in the table.</returns>
+    /// <remarks>
+    /// This method blocks on <see cref="AllAsync(CancellationToken)"/>.
+    /// Prefer the asynchronous version in asynchronous code.
+    /// </remarks>
+    public List<Row> All()
+    {
+        return AllAsync().GetAwaiter().GetResult();
+    }
+
+    /// <summary>Returns all rows from the table asynchronously.</summary>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>All rows in the table.</returns>
+    /// <remarks>
+    /// The default implementation selects everything through <see cref="SelectAsync"/>, so
+    /// entities do not have to override it. Override it when the table needs a dedicated
+    /// query for the "all rows" case.
+    /// </remarks>
+    public virtual Task<List<Row>> AllAsync(CancellationToken ct = default)
+    {
+        return SelectAsync(t => "", null, ct);
+    }
+
+    /// <summary>Selects rows using a predicate over the table structure.</summary>
+    /// <param name="predicate">A function that creates the predicate for the table.</param>
+    /// <param name="parameters">Optional parameter values used by the predicate.</param>
+    /// <returns>The selected rows.</returns>
+    /// <remarks>
+    /// This method blocks on <see cref="SelectAsync(Func{Table, string}, object, CancellationToken)"/>.
+    /// Prefer the asynchronous version in asynchronous code.
+    /// </remarks>
+    public List<Row> Select(Func<Table, string> predicate, object parameters = null)
+    {
+        return SelectAsync(predicate, parameters).GetAwaiter().GetResult();
+    }
+
+    /// <summary>Selects rows asynchronously using a predicate over the table structure.</summary>
+    /// <param name="predicate">A function that creates the predicate for the table.</param>
+    /// <param name="parameters">Optional parameter values used by the predicate.</param>
+    /// <param name="ct">The token used to cancel the command.</param>
+    /// <returns>The selected rows.</returns>
+    public async Task<List<Row>> SelectAsync(Func<Table, string> predicate, object parameters = null, CancellationToken ct = default)
+    {
+        var condition = "";
+
+        return await Context.BuildQuery<Table>((q, e) => q
+            .Config(() => { condition = predicate(e); })
+            .Append($"SELECT {e.Star}")
+            .Append($"FROM {e}")
+            .AppendIf(!string.IsNullOrWhiteSpace(condition), $"WHERE {condition}")
+            )
+            .SetParameters(parameters)
+            .ExecuteAsync<Row>(ct).ConfigureAwait(false);
+    }
+}
