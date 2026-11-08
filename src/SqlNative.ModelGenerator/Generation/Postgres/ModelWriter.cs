@@ -315,7 +315,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             {
                 builder.AppendLine("            .Append($\"WHERE \" + string.Join(\" OR \", keys))");
             }
-            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            .AddParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
         else
@@ -418,7 +418,7 @@ internal sealed class PostgresModelWriter : IModelWriter
                 builder.AppendLine($"                .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
                 builder.AppendLine("                .Append(\"VALUES \" + string.Join(\", \", tuples))");
                 builder.AppendLine("                .Append(\"RETURNING *\")");
-                builder.AppendLine("                .SetParameters(parameters)");
+                builder.AppendLine("                .AddParameters(parameters)");
                 builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                 builder.AppendLine();
                 builder.AppendLine("            for (var i = 0; i < rows.Count && i < loaded.Count; i++)");
@@ -441,7 +441,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
             builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
             builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
-            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            .AddParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         }
 
@@ -566,7 +566,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         builder.AppendLine("            .Append($\"SET " + string.Join(", ", setParts) + "\")");
         builder.AppendLine("            .Append($\"FROM ({source}) AS t2\")");
         builder.AppendLine("            .Append($\"WHERE " + onClause + "\")");
-        builder.AppendLine("            .SetParameters(parameters)");
+        builder.AppendLine("            .AddParameters(parameters)");
         builder.AppendLine("            );");
         builder.AppendLine();
         builder.AppendLine("        if (reload)");

@@ -58,7 +58,7 @@ public abstract partial class TableRepositoryPostgres<Row, Table> : TableReposit
     /// uses.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
         if (model is null)
         {
@@ -80,6 +80,6 @@ public abstract partial class TableRepositoryPostgres<Row, Table> : TableReposit
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
         .AppendIf(model.Offset.HasValue, $"OFFSET {model.Offset}")
         .AppendIf(model.Limit.HasValue, $"LIMIT {model.Limit}")
-        .SetParameters(model.Parameters);
+        .AddParameters(model.Parameters);
     }
 }

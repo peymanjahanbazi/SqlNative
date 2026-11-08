@@ -325,7 +325,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             {
                 builder.AppendLine("            .Append($\"WHERE \" + string.Join(\" OR \", keys))");
             }
-            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            .AddParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
         else
@@ -434,7 +434,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
                 builder.AppendLine($"                .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
                 builder.AppendLine("                .Append(\"OUTPUT INSERTED.*\")");
                 builder.AppendLine("                .Append(\"VALUES \" + string.Join(\", \", tuples))");
-                builder.AppendLine("                .SetParameters(parameters)");
+                builder.AppendLine("                .AddParameters(parameters)");
                 builder.AppendLine($"                ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                 builder.AppendLine();
                 builder.AppendLine("            for (var i = 0; i < rows.Count && i < loaded.Count; i++)");
@@ -457,7 +457,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
             builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
             builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
             builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
-            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            .AddParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
         }
 
@@ -588,7 +588,7 @@ internal sealed class MsSqlModelWriter : IModelWriter
         builder.AppendLine("            .AppendIf(reload, \"OUTPUT INSERTED.*\")");
         builder.AppendLine("            .Append($\"FROM {e}\")");
         builder.AppendLine("            .Append($\"INNER JOIN ({source}) AS t2 ON " + onClause + "\")");
-        builder.AppendLine("            .SetParameters(parameters)");
+        builder.AppendLine("            .AddParameters(parameters)");
         builder.AppendLine("            );");
         builder.AppendLine();
         builder.AppendLine("        if (reload)");

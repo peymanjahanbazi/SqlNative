@@ -15,7 +15,6 @@ public abstract partial class TableRepository<Row, Table>
     where Row : TableRow, new()
     where Table : TableStructure, new()
 {
-
     /// <summary>Returns all rows from the table.</summary>
     /// <returns>All rows in the table.</returns>
     /// <remarks>
@@ -68,7 +67,7 @@ public abstract partial class TableRepository<Row, Table>
             .Append($"FROM {e}")
             .AppendIf(!string.IsNullOrWhiteSpace(condition), $"WHERE {condition}")
             )
-            .SetParameters(parameters)
+            .AddParameters(parameters)
             .ExecuteAsync<Row>(ct).ConfigureAwait(false);
     }
 }

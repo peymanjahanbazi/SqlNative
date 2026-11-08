@@ -317,7 +317,7 @@ internal sealed class OracleModelWriter : IModelWriter
             {
                 builder.AppendLine("            .Append($\"WHERE \" + string.Join(\" OR \", keys))");
             }
-            builder.AppendLine("            .SetParameters(parameters)");
+            builder.AppendLine("            .AddParameters(parameters)");
             builder.AppendLine("            ).ExecuteNonQueryAsync(ct);");
         }
         else
@@ -389,7 +389,7 @@ internal sealed class OracleModelWriter : IModelWriter
                 builder.AppendLine("                .Append($\"INSERT INTO {e}\")");
                 builder.AppendLine($"                .Append($\"({withoutPkColumnsText})\")");
                 builder.AppendLine($"                .Append($\"VALUES ({withoutPkValues})\")");
-                builder.AppendLine($"                .SetParameters(new {{ {withoutPkParameters} }})");
+                builder.AppendLine($"                .AddParameters(new {{ {withoutPkParameters} }})");
                 builder.AppendLine("                ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
                 builder.AppendLine();
                 builder.AppendLine("            if (loadRecord)");
@@ -461,7 +461,7 @@ internal sealed class OracleModelWriter : IModelWriter
                 builder.AppendLine("            .Append($\"INSERT INTO {e}\")");
                 builder.AppendLine($"            .Append($\"({{(skipPrimaryKey ? $\"{withoutPkColumnsLambdaExpr}\" : $\"{allColumnsLambdaExpr}\")}})\")");
                 builder.AppendLine("            .Append(\"VALUES \" + string.Join(\", \", tuples))");
-                builder.AppendLine("            .SetParameters(parameters)");
+                builder.AppendLine("            .AddParameters(parameters)");
                 builder.AppendLine("            ).ExecuteNonQueryAsync(ct).ConfigureAwait(false);");
                 builder.AppendLine();
 
@@ -508,7 +508,7 @@ internal sealed class OracleModelWriter : IModelWriter
                     {
                         builder.AppendLine("                .Append($\"WHERE \" + string.Join(\" OR \", reloadParts))");
                     }
-                    builder.AppendLine("                .SetParameters(reloadParameters)");
+                    builder.AppendLine("                .AddParameters(reloadParameters)");
                     builder.AppendLine($"            ).ExecuteAsync<{rowClassName}>(ct).ConfigureAwait(false);");
                     builder.AppendLine();
                     var isSingleKey = primaryKeys.Count == 1;
@@ -669,7 +669,7 @@ internal sealed class OracleModelWriter : IModelWriter
         builder.AppendLine("            .Append($\"UPDATE {e}\")");
         builder.AppendLine("            .Append($\"JOIN ({source}) t2 ON " + onClause + "\")");
         builder.AppendLine("            .Append($\"SET " + string.Join(", ", setParts) + "\")");
-        builder.AppendLine("            .SetParameters(parameters)");
+        builder.AppendLine("            .AddParameters(parameters)");
         builder.AppendLine("            );");
         builder.AppendLine();
         builder.AppendLine("        if (reload)");

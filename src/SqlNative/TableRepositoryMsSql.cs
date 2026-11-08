@@ -59,7 +59,7 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
     /// row count alone is expressed with <c>TOP (m)</c> on the <c>SELECT</c> clause.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
         if (model is null)
         {
@@ -88,7 +88,7 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
             .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
             .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
             .AppendIf(hasOrderBy, $"ORDER BY {model.OrderBy}")
-            .SetParameters(model.Parameters);
+            .AddParameters(model.Parameters);
         }
 
         return q
@@ -101,6 +101,6 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
         .AppendIf(hasOrderBy, $"ORDER BY {model.OrderBy}")
         .AppendIf(hasOffset && hasOrderBy, $"OFFSET {model.Offset} ROWS")
         .AppendIf(hasLimit, $"FETCH NEXT {model.Limit} ROWS ONLY")
-        .SetParameters(model.Parameters);
+        .AddParameters(model.Parameters);
     }
 }

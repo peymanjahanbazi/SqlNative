@@ -59,7 +59,7 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The limit or the offset is negative.</exception>
-    internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
         if (model is null)
         {
@@ -80,7 +80,7 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
         .AppendIf(model.Limit.HasValue || (model.Offset ?? 0) > 0, GenerateLimit(model))
-        .SetParameters(model.Parameters);
+        .AddParameters(model.Parameters);
     }
 
     /// <summary>Renders the MySQL paging clause.</summary>

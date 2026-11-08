@@ -58,7 +58,7 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
     /// <c>ORDER BY</c>.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    internal protected override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
     {
         if (model is null)
         {
@@ -80,6 +80,6 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
         .AppendIf(model.Offset.HasValue, $"OFFSET {model.Offset} ROWS")
         .AppendIf(model.Limit.HasValue, $"FETCH NEXT {model.Limit} ROWS ONLY")
-        .SetParameters(model.Parameters);
+        .AddParameters(model.Parameters);
     }
 }

@@ -15,7 +15,6 @@ public abstract partial class TableRepository<Row, Table>
     where Row : TableRow, new()
     where Table : TableStructure, new()
 {
-
     /// <summary>Updates the rows matched by a model describing the statement.</summary>
     /// <param name="model">
     /// A function that creates the <see cref="UpdateModel"/> from the table structure.
@@ -50,9 +49,8 @@ public abstract partial class TableRepository<Row, Table>
         .Append($"UPDATE {t}")
         .Append($"SET {modelObject?.Set}")
         .AppendIf(!string.IsNullOrWhiteSpace(modelObject?.Where), $"WHERE {modelObject?.Where}")
-        .SetParameters(modelObject?.Parameters))
+        .AddParameters(modelObject?.Parameters))
         .ExecuteNonQueryAsync().ConfigureAwait(false);
-
     }
 
     /// <summary>Updates the rows matched by a model describing the statement.</summary>
@@ -72,7 +70,6 @@ public abstract partial class TableRepository<Row, Table>
     public int Update(Func<Table, UpdateModel> model)
     {
         return UpdateAsync(model).GetAwaiter().GetResult();
-
     }
 
     /// <summary>Updates a row.</summary>
@@ -147,5 +144,4 @@ public abstract partial class TableRepository<Row, Table>
         int updateCount = await UpdateAsync(updateList, option, ct);
         return insertCount + updateCount;
     }
-
 }

@@ -75,22 +75,10 @@ public class Query
         return this;
     }
 
-    /// <summary>Replaces the current query parameters with the specified dictionary.</summary>
-    /// <param name="parameters">The parameters to use.</param>
-    /// <returns>This query instance.</returns>
-    public Query SetParameters(Dictionary<string, object?> parameters)
+    public Query ClearParameters(object? parameters)
     {
         this.Parameters.Clear();
-        return AddParameters(parameters);
-    }
-
-    /// <summary>Replaces the current query parameters with values from an object.</summary>
-    /// <param name="parameters">The object whose public properties supply parameter values.</param>
-    /// <returns>This query instance.</returns>
-    public Query SetParameters(object? parameters)
-    {
-        this.Parameters.Clear();
-        return AddParameters(parameters);
+        return this;
     }
 
     /// <summary>Adds the specified dictionary to the current query parameters.</summary>
