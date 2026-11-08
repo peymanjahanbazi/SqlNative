@@ -9,6 +9,10 @@ namespace SqlNative;
 /// <summary>
 /// Builds and executes SQL commands using provider-neutral SQL text.
 /// </summary>
+/// <remarks>
+/// Parameters are stored by name, with or without a leading <c>@</c>, and are bound to the
+/// created command when the query is executed.
+/// </remarks>
 public class Query
 {
     /// <summary>
@@ -75,14 +79,19 @@ public class Query
         return this;
     }
 
-    public Query ClearParameters(object? parameters)
+    /// <summary>Removes all parameters that were added to this query.</summary>
+    /// <returns>This query instance.</returns>
+    public Query ClearParameters()
     {
         this.Parameters.Clear();
         return this;
     }
 
-    /// <summary>Adds the specified dictionary to the current query parameters.</summary>
-    /// <param name="parameters">The parameters to add.</param>
+    /// <summary>
+    /// Adds the specified dictionary to the current query parameters.
+    /// Entries with the same name replace existing values.
+    /// </summary>
+    /// <param name="parameters">The parameters to add, keyed by parameter name. When <see langword="null"/>, nothing is changed.</param>
     /// <returns>This query instance.</returns>
     public Query AddParameters(Dictionary<string, object?>? parameters)
     {
@@ -94,15 +103,23 @@ public class Query
         return this;
     }
 
-    /// <summary>Adds values from an object's public properties to the current query parameters.</summary>
-    /// <param name="parameters">The object whose public properties supply parameter values.</param>
+    /// <summary>
+    /// Adds values from an object's public properties to the current query parameters,
+    /// using each property name as the parameter name. A <see cref="Dictionary{TKey, TValue}"/>
+    /// is added directly. Entries with the same name replace existing values.
+    /// </summary>
+    /// <param name="parameters">
+    /// The object whose public instance properties supply parameter values, or a
+    /// <see cref="Dictionary{TKey, TValue}"/> of parameter names and values.
+    /// When <see langword="null"/>, nothing is changed.
+    /// </param>
     /// <returns>This query instance.</returns>
     public Query AddParameters(object? parameters)
     {
         if (parameters == null) return this;
         if (parameters is Dictionary<string, object?> dict)
         {
-            return AddParameters(dict);
+            return AddParameters((Dictionary<string, object?>)dict);
         }
 
         var properties = parameters.GetType()
