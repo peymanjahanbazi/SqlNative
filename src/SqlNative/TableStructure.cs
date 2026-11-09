@@ -7,6 +7,8 @@ namespace SqlNative;
 /// </summary>
 public abstract class TableStructure
 {
+    public Query Query { get; set; }
+
     /// <summary>Gets or sets whether the table alias is omitted from generated SQL.</summary>
     public bool DisableAlias { get; set; } = false;
 

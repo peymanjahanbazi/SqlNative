@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace SqlNative;
 
 /// <summary>
@@ -65,18 +67,31 @@ public class SqlUtils
     }
 
     /// <summary>
-    /// Builds an <c>IN</c> predicate, so <c>ListIn("Id", [1, 2], q)</c> renders as <c>Id IN (@pl0, @pl1)</c>.
-    /// Each value is added to <paramref name="q"/> as a separate parameter.
+    /// Builds an <c>IN</c> predicate, so <c>ListIn("Id", [1, 2], q)</c> renders as <c>Id IN (1, 2)</c>.
+    /// Numbers and GUIDs are rendered inline using the invariant culture, with null entries rendered as
+    /// <c>NULL</c>. All other types (including strings, which may carry SQL injection payloads) are added
+    /// to <paramref name="q"/> as parameters.
     /// </summary>
-    /// <typeparam name="T">The type of the compared values.</typeparam>
+    /// <typeparam name="T">The type of the compared values. Must be a basic type; complex objects are not supported.</typeparam>
     /// <param name="field">The column or expression to compare.</param>
     /// <param name="values">The values to match. When null or empty, an empty <c>IN ()</c> clause is returned.</param>
-    /// <param name="q">The query that receives the generated parameters.</param>
-    /// <returns>An <c>IN</c> predicate containing one parameter per value.</returns>
+    /// <param name="q">The query that receives the generated parameters when the values are not inlined.</param>
+    /// <returns>An <c>IN</c> predicate, inlined for numbers and GUIDs and parameterised otherwise.</returns>
     public static string ListIn<T>(string field, List<T> values, Query q)
     {
         if (values is null || values.Count == 0)
             return $" {field} IN ()";
+
+        if (IsInlineableType(typeof(T)))
+        {
+            var literals = new List<string>(values.Count);
+            foreach (var value in values)
+            {
+                literals.Add(value is null ? "NULL" : ToSqlLiteral(value));
+            }
+
+            return $"{field} IN ({string.Join(", ", literals)})";
+        }
 
         var parts = new List<string>(values.Count);
         var parameters = new Dictionary<string, object?>();
@@ -89,6 +104,35 @@ public class SqlUtils
         }
         q.AddParameters(parameters);
         return $"{field} IN ({string.Join(", ", parts)})";
+    }
+
+    private static bool IsInlineableType(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+
+        return type == typeof(Guid)
+            || type == typeof(sbyte)
+            || type == typeof(byte)
+            || type == typeof(short)
+            || type == typeof(ushort)
+            || type == typeof(int)
+            || type == typeof(uint)
+            || type == typeof(long)
+            || type == typeof(ulong)
+            || type == typeof(float)
+            || type == typeof(double)
+            || type == typeof(decimal);
+    }
+
+    private static string ToSqlLiteral(object value)
+    {
+        if (value is Guid guid)
+            return $"'{guid:D}'";
+
+        if (value is IFormattable formattable)
+            return formattable.ToString(null, CultureInfo.InvariantCulture) ?? "NULL";
+
+        return Convert.ToString(value, CultureInfo.InvariantCulture) ?? "NULL";
     }
 
     /// <summary>
@@ -104,6 +148,17 @@ public class SqlUtils
     {
         if (values is null || values.Count == 0)
             return $" {field} NOT IN ()";
+
+        if (IsInlineableType(typeof(T)))
+        {
+            var literals = new List<string>(values.Count);
+            foreach (var value in values)
+            {
+                literals.Add(value is null ? "NULL" : ToSqlLiteral(value));
+            }
+
+            return $"{field} NOT IN ({string.Join(", ", literals)})";
+        }
 
         var parts = new List<string>(values.Count);
         var parameters = new Dictionary<string, object?>();
@@ -132,6 +187,17 @@ public class SqlUtils
         if (values is null || values.Count == 0)
             return $"";
 
+        if (IsInlineableType(typeof(T)))
+        {
+            var literals = new List<string>(values.Count);
+            foreach (var value in values)
+            {
+                literals.Add(value is null ? $"{field} IS NULL" : $"{field} = {ToSqlLiteral(value)}");
+            }
+
+            return $"({string.Join(" OR ", literals)})";
+        }
+
         var parts = new List<string>(values.Count);
         var parameters = new Dictionary<string, object?>();
         int idx = 0;
@@ -158,6 +224,17 @@ public class SqlUtils
     {
         if (values is null || values.Count == 0)
             return $"";
+
+        if (IsInlineableType(typeof(T)))
+        {
+            var literals = new List<string>(values.Count);
+            foreach (var value in values)
+            {
+                literals.Add(value is null ? $"{field} IS NOT NULL" : $"{field} <> {ToSqlLiteral(value)}");
+            }
+
+            return $"({string.Join(" AND ", literals)})";
+        }
 
         var parts = new List<string>(values.Count);
         var parameters = new Dictionary<string, object?>();

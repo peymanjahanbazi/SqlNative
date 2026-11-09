@@ -92,16 +92,16 @@ public abstract partial class SqlNativeContext
     /// <returns>The query created by <paramref name="func"/>.</returns>
     public Query BuildQuery(Func<Query, Query> func)
     {
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery = func(selectQuery);
+        query = func(query);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -113,20 +113,22 @@ public abstract partial class SqlNativeContext
     public Query BuildQuery<A>(Func<Query, A, Query> func)
         where A : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        query = func(query, a);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -140,22 +142,27 @@ public abstract partial class SqlNativeContext
         where A : TableStructure, new()
         where B : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        query = func(query, a, b);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -171,24 +178,32 @@ public abstract partial class SqlNativeContext
         where B : TableStructure, new()
         where C : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        query = func(query, a, b, c);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -206,26 +221,37 @@ public abstract partial class SqlNativeContext
         where C : TableStructure, new()
         where D : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        query = func(query, a, b, c, d);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -245,28 +271,42 @@ public abstract partial class SqlNativeContext
         where D : TableStructure, new()
         where E : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        query = func(query, a, b, c, d, e);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -288,30 +328,47 @@ public abstract partial class SqlNativeContext
         where E : TableStructure, new()
         where F : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        query = func(query, a, b, c, d, e, f);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -335,32 +392,52 @@ public abstract partial class SqlNativeContext
         where F : TableStructure, new()
         where G : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        query = func(query, a, b, c, d, e, f, g);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -386,34 +463,57 @@ public abstract partial class SqlNativeContext
         where G : TableStructure, new()
         where H : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        query = func(query, a, b, c, d, e, f, g, h);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -441,36 +541,62 @@ public abstract partial class SqlNativeContext
         where H : TableStructure, new()
         where I : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -500,38 +626,67 @@ public abstract partial class SqlNativeContext
         where I : TableStructure, new()
         where J : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -563,40 +718,72 @@ public abstract partial class SqlNativeContext
         where J : TableStructure, new()
         where K : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var k = new K();
-        k.Alias = GetAlias(used, k.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        var k = new K
+        {
+            Query = query
+        };
+        k.Alias = GetAlias(used, k.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j, k);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -630,42 +817,77 @@ public abstract partial class SqlNativeContext
         where K : TableStructure, new()
         where L : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var k = new K();
-        k.Alias = GetAlias(used, k.TableName);
-        var l = new L();
-        l.Alias = GetAlias(used, l.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        var k = new K
+        {
+            Query = query
+        };
+        k.Alias = GetAlias(used, k.TableName);
+        var l = new L
+        {
+            Query = query
+        };
+        l.Alias = GetAlias(used, l.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j, k, l);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -701,44 +923,82 @@ public abstract partial class SqlNativeContext
         where L : TableStructure, new()
         where M : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var k = new K();
-        k.Alias = GetAlias(used, k.TableName);
-        var l = new L();
-        l.Alias = GetAlias(used, l.TableName);
-        var m = new M();
-        m.Alias = GetAlias(used, m.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        var k = new K
+        {
+            Query = query
+        };
+        k.Alias = GetAlias(used, k.TableName);
+        var l = new L
+        {
+            Query = query
+        };
+        l.Alias = GetAlias(used, l.TableName);
+        var m = new M
+        {
+            Query = query
+        };
+        m.Alias = GetAlias(used, m.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j, k, l, m);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -776,46 +1036,87 @@ public abstract partial class SqlNativeContext
         where M : TableStructure, new()
         where N : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var k = new K();
-        k.Alias = GetAlias(used, k.TableName);
-        var l = new L();
-        l.Alias = GetAlias(used, l.TableName);
-        var m = new M();
-        m.Alias = GetAlias(used, m.TableName);
-        var n = new N();
-        n.Alias = GetAlias(used, n.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        var k = new K
+        {
+            Query = query
+        };
+        k.Alias = GetAlias(used, k.TableName);
+        var l = new L
+        {
+            Query = query
+        };
+        l.Alias = GetAlias(used, l.TableName);
+        var m = new M
+        {
+            Query = query
+        };
+        m.Alias = GetAlias(used, m.TableName);
+        var n = new N
+        {
+            Query = query
+        };
+        n.Alias = GetAlias(used, n.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
 
-        return selectQuery;
+        return query;
     }
 
     /// <summary>
@@ -855,48 +1156,92 @@ public abstract partial class SqlNativeContext
         where N : TableStructure, new()
         where O : TableStructure, new()
     {
-        var used = new HashSet<string>();
-        var a = new A();
-        a.Alias = GetAlias(used, a.TableName);
-        var b = new B();
-        b.Alias = GetAlias(used, b.TableName);
-        var c = new C();
-        c.Alias = GetAlias(used, c.TableName);
-        var d = new D();
-        d.Alias = GetAlias(used, d.TableName);
-        var e = new E();
-        e.Alias = GetAlias(used, e.TableName);
-        var f = new F();
-        f.Alias = GetAlias(used, f.TableName);
-        var g = new G();
-        g.Alias = GetAlias(used, g.TableName);
-        var h = new H();
-        h.Alias = GetAlias(used, h.TableName);
-        var i = new I();
-        i.Alias = GetAlias(used, i.TableName);
-        var j = new J();
-        j.Alias = GetAlias(used, j.TableName);
-        var k = new K();
-        k.Alias = GetAlias(used, k.TableName);
-        var l = new L();
-        l.Alias = GetAlias(used, l.TableName);
-        var m = new M();
-        m.Alias = GetAlias(used, m.TableName);
-        var n = new N();
-        n.Alias = GetAlias(used, n.TableName);
-        var o = new O();
-        o.Alias = GetAlias(used, o.TableName);
-        var selectQuery = new Query
+        var query = new Query
         {
             Connection = Connection,
             GenerateModel = IsDevelopMode,
             LogSqlCommand = IsDevelopMode || LogSqlCommands,
             Logger = Logger,
         };
-        selectQuery.Connection = Connection;
-        selectQuery = func(selectQuery, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
+        var used = new HashSet<string>();
+        var a = new A
+        {
+            Query = query
+        };
+        a.Alias = GetAlias(used, a.TableName);
+        var b = new B
+        {
+            Query = query
+        };
+        b.Alias = GetAlias(used, b.TableName);
+        var c = new C
+        {
+            Query = query
+        };
+        c.Alias = GetAlias(used, c.TableName);
+        var d = new D
+        {
+            Query = query
+        };
+        d.Alias = GetAlias(used, d.TableName);
+        var e = new E
+        {
+            Query = query
+        };
+        e.Alias = GetAlias(used, e.TableName);
+        var f = new F
+        {
+            Query = query
+        };
+        f.Alias = GetAlias(used, f.TableName);
+        var g = new G
+        {
+            Query = query
+        };
+        g.Alias = GetAlias(used, g.TableName);
+        var h = new H
+        {
+            Query = query
+        };
+        h.Alias = GetAlias(used, h.TableName);
+        var i = new I
+        {
+            Query = query
+        };
+        i.Alias = GetAlias(used, i.TableName);
+        var j = new J
+        {
+            Query = query
+        };
+        j.Alias = GetAlias(used, j.TableName);
+        var k = new K
+        {
+            Query = query
+        };
+        k.Alias = GetAlias(used, k.TableName);
+        var l = new L
+        {
+            Query = query
+        };
+        l.Alias = GetAlias(used, l.TableName);
+        var m = new M
+        {
+            Query = query
+        };
+        m.Alias = GetAlias(used, m.TableName);
+        var n = new N
+        {
+            Query = query
+        };
+        n.Alias = GetAlias(used, n.TableName);
+        var o = new O
+        {
+            Query = query
+        };
+        o.Alias = GetAlias(used, o.TableName);
+        query = func(query, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
 
-        return selectQuery;
+        return query;
     }
 
 #if NET10_0
