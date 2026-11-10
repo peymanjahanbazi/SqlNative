@@ -201,7 +201,6 @@ This package is deliberately small. Not implemented yet:
 | Package | Purpose |
 | --- | --- |
 | `SqlNative` | The core ORM — query builder, table and column model, CRUD, result mapping. Referenced automatically. |
-| `SqlNative.Core` | Identifier helpers, CLR type mappers, `DatabaseEngine`. Transitive. |
 | `SqlNative.MsSqlFunc` / `MySqlFunc` / `PostgresFunc` | Optional catalogs of each dialect's SQL functions, as `QueryPart` factories. |
 | `SqlNative.ModelGenerator` | Full code generator, for producing complete data-access layers from a live schema. |
 

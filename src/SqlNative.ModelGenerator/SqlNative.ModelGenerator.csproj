@@ -35,4 +35,10 @@
     <ProjectReference Include="..\SqlNative\SqlNative.csproj" />
   </ItemGroup>
 
+  <!-- The dialect helpers are shared source, not a referenced assembly, so the tool carries them
+       internally and the published package depends on nothing but the SqlNative package. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\Core\**\*.cs" LinkBase="Core" />
+  </ItemGroup>
+
 </Project>

@@ -33,7 +33,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="6.0.0" Condition="'$(TargetFramework)' == 'net461'" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Condition="'$(TargetFramework)' != 'net461'" />
   </ItemGroup>
+  <!-- The dialect helpers (identifier quoting, CLR type mapping) are shared source rather than a
+       referenced assembly: every type in there is internal, so compiling the files into each
+       consumer keeps them out of the published packages and out of their dependency graphs. -->
   <ItemGroup>
-    <ProjectReference Include="..\SqlNative.Core\SqlNative.Core.csproj" />
+    <Compile Include="..\Shared\Core\**\*.cs" LinkBase="Core" />
   </ItemGroup>
 </Project>

@@ -1,16 +1,16 @@
 # SqlNative.Core
 
-Dialect knowledge for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. This package holds the two pieces of per-database logic that everything else depends on: how an identifier becomes a legal C# name in that database's dialect, and how a SQL type becomes a CLR type.
+Dialect knowledge for [SqlNative](https://github.com/peymanjahanbazi/SqlNative/blob/main/src/SqlNative/README.md) — the light-weight ORM that keeps your SQL visible. These files hold the two pieces of per-database logic that everything else depends on: how an identifier becomes a legal C# name in that database's dialect, and how a SQL type becomes a CLR type.
 
-It has **no dependencies and no ADO.NET providers**. It is pure string and regex work.
+They have **no dependencies and no ADO.NET providers**. They are pure string and regex work.
 
-**You probably don't need to install this.** `SqlNative` and `SqlNative.ModelGenerator` both reference it, so it arrives transitively. Reach for it directly only if you're writing your own schema reader or your own code generator and want the same naming and type-mapping rules the rest of the toolkit uses.
+**This is internal shared source, not a package.** Every type here is `internal`, so it is compiled directly into the assemblies that need it — `SqlNative` and `SqlNative.ModelGenerator` — instead of shipping as a NuGet package. Nothing here is part of the public API of either package, and nothing has to be installed.
 
 ---
 
 ## Contents
 
-- [Install](#install)
+- [How it is shared](#how-it-is-shared)
 - [What is in here](#what-is-in-here)
 - [Identifier helpers](#identifier-helpers)
 - [CLR type mappers](#clr-type-mappers)
@@ -22,13 +22,19 @@ It has **no dependencies and no ADO.NET providers**. It is pure string and regex
 
 ---
 
-## Install
+## How it is shared
 
-```bash
-dotnet add package SqlNative.Core
+The files live in this folder and are linked into each consuming project:
+
+```xml
+<ItemGroup>
+  <Compile Include="..\Shared\Core\**\*.cs" LinkBase="Core" />
+</ItemGroup>
 ```
 
-Targets `net461`, `netstandard2.0`, `net6.0`, `net8.0`, `net9.0` and `net10.0`.
+Each assembly gets its own copy, so the types stay `internal` to it and neither package takes a dependency on the other. That keeps the published `SqlNative` package free of an extra dependency, and keeps this code out of NuGet entirely.
+
+Add a file here and both consumers pick it up on the next build — no project reference to update.
 
 ---
 
@@ -198,7 +204,7 @@ Typed `GetInt64`/`GetBoolean`/`GetString` calls rather than `GetValue` plus a ca
 ## DatabaseEngine
 
 ```csharp
-public enum DatabaseEngine
+internal enum DatabaseEngine
 {
     MySql,
     Postgres,
@@ -213,11 +219,11 @@ There is no registry or lookup behind it — it's a plain discriminator. The cor
 
 ## Who uses this
 
-Two consumers inside the toolkit:
+Two consumers inside the toolkit, each compiling its own copy:
 
 **`Query.Model<T>()`** in the core package. When you run a query and ask it to write a `QueryResult` class from the result set, it picks an identifier helper from the `DatabaseEngine` to decide property names, and uses it to escape column names into `[SqlNativeColumn]` attributes and `GetOrdinal` calls. It also handles repeated column names in a join by emitting `QueryResult.OrdinalN(reader, "Name", 1)` for the second and subsequent occurrences.
 
-**`SqlNative.ModelGenerator`** calls all four mappers to type every column of a live schema, and all four helpers to name every generated class. Keeping the rules in one shared package is what stops the generated output from drifting away from the runtime naming.
+**`SqlNative.ModelGenerator`** calls all four mappers to type every column of a live schema, and all four helpers to name every generated class. Keeping the rules in one shared place is what stops the generated output from drifting away from the runtime naming.
 
 ---
 
@@ -237,8 +243,8 @@ Two consumers inside the toolkit:
 
 | Package | Purpose |
 | --- | --- |
-| `SqlNative` | The core ORM. References this package. |
-| `SqlNative.ModelGenerator` | Schema-to-source code generator. References this package. |
+| `SqlNative` | The core ORM. Compiles this source in. |
+| `SqlNative.ModelGenerator` | Schema-to-source code generator. Compiles this source in. |
 | `SqlNative.AspNetCore` | DI registration for the core context. |
 | `SqlNative.MsSqlFunc` / `MySqlFunc` / `PostgresFunc` | Optional catalogs of each dialect's SQL functions, as `QueryPart` factories. |
 

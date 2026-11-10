@@ -480,7 +480,6 @@ PostgreSQL and Oracle still emit the MySQL syntax described above.
 | Package | Purpose |
 | --- | --- |
 | `SqlNative` | The core ORM the generated code targets — query builder, table and column model, CRUD primitives, result mapping. Referenced automatically. |
-| `SqlNative.Core` | Identifier helpers and CLR type mappers, one per engine. The generator calls into these, so the two packages stay in step on naming and type mapping. |
 | `SqlNative.AspNetCore` | Registers the generated context in DI: `AddSqlNativeContext<TContext, TConnection>(...)`. |
 | `SqlNative.MsSqlFunc` / `MySqlFunc` / `PostgresFunc` | Optional catalogs of each dialect's SQL functions, as `QueryPart` factories. |
 

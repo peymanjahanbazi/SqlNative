@@ -533,7 +533,6 @@ The core `SqlUtils` class currently exposes `SqlUtils.NULL`, `SqlUtils.Join` and
 
 | Package | Purpose |
 | --- | --- |
-| `SqlNative.Core` | Identifier helpers, CLR type mappers and the `DatabaseEngine` enum. Referenced automatically. |
 | `SqlNative.MsSqlFunc` / `MySqlFunc` / `PostgresFunc` | Optional catalogs of each dialect's SQL functions, as `QueryPart` factories. |
 | `SqlNative.AspNetCore` | DI registration: `builder.Services.AddSqlNativeContext<TContext, TConnection>(...)`. |
 | `SqlNative.ModelGenerator` | The full code generator, for producing complete data-access layers from a live schema. |
