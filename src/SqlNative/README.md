@@ -160,12 +160,12 @@ var range  = $"{a.Id} >= {1}";          // a.Id >= 1
 var neg    = !$"{a.Name}.Contains(\"x\")";  // NOT ...
 ```
 
-`==` emits `IS NULL` when either operand is the literal `"null"` (lower case), and `=` otherwise. Note that `SqlFunctions.NULL` renders as upper-case `NULL`, so comparing against it produces `= NULL` rather than `IS NULL` — compare against the lower-case `"null"` string if you want the null check.
+`==` emits `IS NULL` when either operand is the literal `"null"` (lower case), and `=` otherwise. Note that `SqlUtils.NULL` renders as upper-case `NULL`, so comparing against it produces `= NULL` rather than `IS NULL` — compare against the lower-case `"null"` string if you want the null check.
 
-`+` concatenates two `QueryPart`s with a `+`, which is how you write arithmetic like `a.Price * a.Qty`. Note that `TableColumn + TableColumn` is a different overload: it joins with a **space**, so build comma-separated column lists with `SqlFunctions.CList(...)`.
+`+` concatenates two `QueryPart`s with a `+`, which is how you write arithmetic like `a.Price * a.Qty`. Note that `TableColumn + TableColumn` is a different overload: it joins with a **space**, so build comma-separated column lists with `SqlUtils.Join(...)`.
 
 ```csharp
-var cols = SqlFunctions.CList(c.Name, c.CountryCode, c.Population); // "c.Name, c.CountryCode, c.Population"
+var cols = SqlUtils.Join(c.Name, c.CountryCode, c.Population); // "c.Name, c.CountryCode, c.Population"
 ```
 
 ---
@@ -525,7 +525,7 @@ SqlNative has no provider dependency. You supply the `DbConnection`; the table a
 | PostgreSQL | `PostgresTableStructure` | `SqlNative.PostgresFunc` |
 | Oracle | `OracleTableStructure` | — |
 
-The core `SqlFunctions` class currently exposes `SqlFunctions.NULL` and `SqlFunctions.CList`; the per-engine catalogs add the rest of the dialect's built-in functions.
+The core `SqlUtils` class currently exposes `SqlUtils.NULL`, `SqlUtils.Join` and `SqlUtils.Select`; the per-engine catalogs add the rest of the dialect's built-in functions.
 
 ---
 
@@ -547,7 +547,7 @@ Worth knowing before you build on this:
 - **Every execution method has an `Async` counterpart.** `Execute`, `ExecuteScalar` and `ExecuteNonQuery` have `ExecuteAsync`, `ExecuteScalarAsync` and `ExecuteNonQueryAsync` that take a `CancellationToken` and use the provider's real async I/O. The synchronous methods delegate to them, so both paths share one implementation. The `TableRepository` members have async counterparts too.
 - **There is no `Select`/`Insert`/`Update`/`Delete` builder on the context.** The query surface is `BuildQuery`, and the CRUD surface is `TableRepository`. The model-based builders (`SelectModel`, `InsertModel`, `UpdateModel`, the join types) are not part of this package.
 - **The `Query` builder does not add `LIMIT` / `OFFSET`.** Use `Append` to write the clause your engine wants — SQL Server spells it `OFFSET … ROWS FETCH NEXT … ROWS ONLY`.
-- **`QueryPart ==` only emits `IS NULL` for the lower-case literal `"null"`.** `SqlFunctions.NULL` is upper case, so it produces `= NULL`.
+- **`QueryPart ==` only emits `IS NULL` for the lower-case literal `"null"`.** `SqlUtils.NULL` is upper case, so it produces `= NULL`.
 - **Parameters are always bound**, never inlined — so numeric values are escaped by the provider. See [How parameters are handled](#how-parameters-are-handled).
 
 ## License

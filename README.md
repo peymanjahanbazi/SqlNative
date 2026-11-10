@@ -684,7 +684,7 @@ The trade is deliberate. If you want an ORM that generates SQL for you and gets 
 | PostgreSQL | `PostgresTableStructure` | `SqlNative.PostgresFunc` |
 | Oracle | `OracleTableStructure` | — |
 
-The core `SqlFunctions` class currently exposes `SqlFunctions.NULL` and `SqlFunctions.CList`; the per-engine catalogs add the rest of the dialect's built-in functions.
+The core `SqlUtils` class currently exposes `SqlUtils.NULL`, `SqlUtils.Join` and `SqlUtils.Select`; the per-engine catalogs add the rest of the dialect's built-in functions.
 
 > The `Query` builder emits only what you `Append`. There is no `LIMIT` / `OFFSET` helper — write the clause your engine wants (SQL Server spells it `OFFSET … ROWS FETCH NEXT … ROWS ONLY`).
 

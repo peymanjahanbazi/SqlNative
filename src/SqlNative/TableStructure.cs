@@ -7,6 +7,13 @@ namespace SqlNative;
 /// </summary>
 public abstract class TableStructure
 {
+    /// <summary>
+    /// Gets or sets the query this table was created for.
+    /// </summary>
+    /// <remarks>
+    /// It is set by the context when the table is built for a query, so the table can reach the
+    /// query it belongs to.
+    /// </remarks>
     public Query Query { get; set; }
 
     /// <summary>Gets or sets whether the table alias is omitted from generated SQL.</summary>

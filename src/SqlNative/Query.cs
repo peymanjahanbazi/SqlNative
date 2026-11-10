@@ -18,6 +18,10 @@ public class Query
     /// <summary>
     /// Gets the SQL text accumulated by this query.
     /// </summary>
+    /// <remarks>
+    /// Every appended fragment is written on its own line, so the text reads as the statement
+    /// it will be sent as.
+    /// </remarks>
     public string Sql
     {
         get
@@ -26,6 +30,9 @@ public class Query
         }
     }
 
+    /// <summary>
+    /// The values bound to the command, keyed by parameter name.
+    /// </summary>
     private Dictionary<string, object?> Parameters = new();
 
     /// <summary>
@@ -50,10 +57,13 @@ public class Query
     /// </summary>
     public ILogger? Logger { get; internal set; }
 
+    /// <summary>
+    /// The accumulated SQL text. Every appended fragment is terminated by a newline.
+    /// </summary>
     private StringBuilder sqlBuilder = new();
 
     /// <summary>Appends SQL text to the query.</summary>
-    /// <param name="sql">The SQL text to append.</param>
+    /// <param name="sql">The SQL text to append. Null, empty or whitespace-only text is ignored.</param>
     /// <returns>This query instance.</returns>
     public Query Append(string sql)
     {
@@ -67,7 +77,7 @@ public class Query
 
     /// <summary>Appends SQL text when the specified condition is true.</summary>
     /// <param name="condition">Whether the text should be appended.</param>
-    /// <param name="sql">The SQL text to append.</param>
+    /// <param name="sql">The SQL text to append. Null, empty or whitespace-only text is ignored.</param>
     /// <returns>This query instance.</returns>
     public Query AppendIf(bool condition, string sql)
     {
@@ -81,6 +91,7 @@ public class Query
 
     /// <summary>Removes all parameters that were added to this query.</summary>
     /// <returns>This query instance.</returns>
+    /// <remarks>The accumulated SQL text is not changed — only the values bound to it are dropped.</remarks>
     public Query ClearParameters()
     {
         this.Parameters.Clear();
@@ -169,6 +180,7 @@ public class Query
     /// <summary>Executes the query and maps the returned rows to result objects.</summary>
     /// <typeparam name="Result">The result type to create for each row.</typeparam>
     /// <returns>The mapped result rows.</returns>
+    /// <remarks>The query's parameters are bound to the command before it runs; they are never inlined into the SQL.</remarks>
     public List<Result> Execute<Result>()
         where Result : new()
     {
@@ -197,6 +209,11 @@ public class Query
     /// <param name="file">The source file path of the caller.</param>
     /// <param name="member">The calling member name.</param>
     /// <returns>This query instance.</returns>
+    /// <remarks>
+    /// The model is generated only when <see cref="GenerateModel"/> is enabled, and the file is written
+    /// next to the calling source file. Errors are logged and swallowed, so a failed generation never
+    /// breaks the query.
+    /// </remarks>
     public Query Model<T>(string className = "",
         string ns = "",
         [CallerFilePath] string file = "",
@@ -232,6 +249,10 @@ public class Query
         return this;
     }
 
+    /// <summary>
+    /// Creates the command for this query, binding every parameter to it.
+    /// </summary>
+    /// <returns>The command, carrying the accumulated SQL text and the bound parameters.</returns>
     private DbCommand CreateCommand()
     {
         DbCommand command = Connection.CreateCommand();
@@ -270,9 +291,10 @@ public class Query
 
     /// <summary>Appends text generated for every item in a list.</summary>
     /// <typeparam name="T">The item type.</typeparam>
-    /// <param name="items">The items to process.</param>
+    /// <param name="items">The items to process. When null or empty, nothing is appended.</param>
     /// <param name="func">The function that generates text for each item.</param>
     /// <returns>This query instance.</returns>
+    /// <remarks>The generated items are appended one after another, with no separator between them.</remarks>
     public Query AppendFor<T>(List<T>? items, Func<T, string> func)
     {
         return this.AppendFor("", items, func);
@@ -280,8 +302,8 @@ public class Query
 
     /// <summary>Appends text generated for every item in a list, separated by the specified join text.</summary>
     /// <typeparam name="T">The item type.</typeparam>
-    /// <param name="join">The separator inserted between generated items.</param>
-    /// <param name="items">The items to process.</param>
+    /// <param name="join">The separator inserted between generated items. It is not written before the first or after the last item.</param>
+    /// <param name="items">The items to process. When null or empty, nothing is appended.</param>
     /// <param name="func">The function that generates text for each item.</param>
     /// <returns>This query instance.</returns>
     public Query AppendFor<T>(string join, List<T>? items, Func<T, string> func)
@@ -299,7 +321,7 @@ public class Query
     }
 
     /// <summary>Invokes a configuration action and returns this query instance.</summary>
-    /// <param name="value">The configuration action to invoke.</param>
+    /// <param name="value">The configuration action to invoke. It takes no arguments and captures the query it configures.</param>
     /// <returns>This query instance.</returns>
     public Query Config(Action value)
     {

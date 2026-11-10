@@ -9,7 +9,7 @@ internal sealed class MySqlModelWriter : IModelWriter
     private static readonly HashSet<string> StructureReservedNames = new(StringComparer.Ordinal)
     {
         "Alias", "DisableAlias", "Star", "TableName", "Row", "Entity", "Repository",
-        "ToString", "Equals", "GetHashCode", "GetType",
+        "Query", "ToString", "Equals", "GetHashCode", "GetType",
     };
 
     private static readonly HashSet<string> RowReservedNames = new(StringComparer.Ordinal)
