@@ -35,19 +35,19 @@ jobs:
                       10.0.x
 
             - name: Restore
-              run: dotnet restore
+              run: dotnet restore SqlNative.slnx
 
             - name: Build
-              run: dotnet build -c Release --no-restore
+              run: dotnet build SqlNative.slnx -c Release --no-restore
 
             - name: Test
-              run: dotnet test -c Release --no-build --logger trx
+              run: dotnet test SqlNative.slnx -c Release --no-build --logger trx
 
             - name: Pack
               run: |
                   VERSION=${GITHUB_REF_NAME#v}
                   echo "Packing version $VERSION (from tag $GITHUB_REF_NAME)"
-                  dotnet pack -c Release --no-build -o artifacts \
+                  dotnet pack SqlNative.slnx -c Release --no-build -o artifacts \
                     -p:ContinuousIntegrationBuild=true \
                     -p:Version=$VERSION \
                     -p:AssemblyVersion=$VERSION \
