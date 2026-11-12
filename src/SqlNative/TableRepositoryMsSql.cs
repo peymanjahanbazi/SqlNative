@@ -45,6 +45,7 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
     /// <param name="model">The model describing the select statement.</param>
     /// <param name="q">The query being built.</param>
     /// <param name="t1">The main table of the statement.</param>
+    /// <param name="IsCountQuery"></param>
     /// <returns>The query containing the generated statement.</returns>
     /// <remarks>
     /// The clauses are emitted in the order <c>SELECT</c>, <c>FROM</c>, joins, <c>WHERE</c>,
@@ -59,7 +60,7 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
     /// row count alone is expressed with <c>TOP (m)</c> on the <c>SELECT</c> clause.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
     {
         if (model is null)
         {
@@ -72,8 +73,8 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
         model.From = t1;
 
         var hasOrderBy = !string.IsNullOrWhiteSpace(model.OrderBy);
-        var hasLimit = model.Limit.HasValue;
-        var hasOffset = model.Offset.HasValue;
+        var hasLimit = !string.IsNullOrEmpty(model.Limit) && !IsCountQuery;
+        var hasOffset = !string.IsNullOrEmpty(model.Offset) && !IsCountQuery;
 
         // A row count without an ORDER BY is expressed with TOP, which needs no paging clause.
         var useTop = hasLimit && !hasOffset;
@@ -81,7 +82,8 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
         if (useTop)
         {
             return q
-            .Append($"SELECT TOP ({model.Limit}) {model.Select}")
+            .AppendIf(!IsCountQuery, $"SELECT TOP ({model.Limit}) {model.Select}")
+            .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
             .Append($"FROM {model.From}")
             .AppendFor(model.Joins, GenerateJoin)
             .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
@@ -92,15 +94,16 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
         }
 
         return q
-        .Append($"SELECT {model.Select}")
+        .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
+        .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
         .Append($"FROM {model.From}")
         .AppendFor(model.Joins, GenerateJoin)
         .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
         .AppendIf(hasOrderBy, $"ORDER BY {model.OrderBy}")
-        .AppendIf(hasOffset && hasOrderBy, $"OFFSET {model.Offset} ROWS")
-        .AppendIf(hasLimit, $"FETCH NEXT {model.Limit} ROWS ONLY")
+        .AppendIf(hasOffset && hasOrderBy && !IsCountQuery, $"OFFSET {model.Offset} ROWS")
+        .AppendIf(hasLimit && !IsCountQuery, $"FETCH NEXT {model.Limit} ROWS ONLY")
         .AddParameters(model.Parameters);
     }
 }

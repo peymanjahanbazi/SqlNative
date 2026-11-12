@@ -1,6 +1,5 @@
 namespace SqlNative;
 
-
 /// <summary>
 /// Describes a SELECT query and its optional clauses.
 /// </summary>
@@ -28,10 +27,10 @@ public class SelectModel
     public string? Having { get; set; }
 
     /// <summary>Gets or sets the maximum number of rows to return.</summary>
-    public int? Limit { get; set; }
+    public string? Limit { get; set; }
 
     /// <summary>Gets or sets the number of rows to skip.</summary>
-    public int? Offset { get; set; }
+    public string? Offset { get; set; }
 
     /// <summary>Gets or sets the joins applied to the query.</summary>
     public List<JoinClause>? Joins { get; set; }

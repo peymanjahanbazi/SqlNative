@@ -1,5 +1,3 @@
-using System;
-
 namespace SqlNative;
 
 /// <summary>
@@ -15,8 +13,6 @@ namespace SqlNative;
 /// </remarks>
 public abstract partial class TableRepository<Row, Table>
 {
-
-
     /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
     /// <param name="model">The model describing the select statement.</param>
     /// <param name="q">The query being built.</param>
@@ -26,7 +22,7 @@ public abstract partial class TableRepository<Row, Table>
     /// Each dialect supplies its own implementation, because the clause order and the
     /// paging syntax differ between engines.
     /// </remarks>
-    abstract internal protected Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1);
+    protected internal abstract Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false);
 
     /// <summary>
     /// Creates a SELECT query from 1 table structure with automatically assigned aliases.

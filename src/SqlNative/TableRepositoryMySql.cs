@@ -59,7 +59,7 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The limit or the offset is negative.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
     {
         if (model is null)
         {
@@ -72,14 +72,15 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
         model.From = t1;
 
         return q
-        .Append($"SELECT {model.Select}")
+        .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
+        .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
         .Append($"FROM {model.From}")
         .AppendFor(model.Joins, GenerateJoin)
         .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
-        .AppendIf(model.Limit.HasValue || (model.Offset ?? 0) > 0, GenerateLimit(model))
+        .AppendIf(!IsCountQuery && (!string.IsNullOrEmpty(model.Limit) || !string.IsNullOrEmpty(model.Offset)), GenerateLimit(model))
         .AddParameters(model.Parameters);
     }
 
@@ -96,21 +97,12 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
     /// <exception cref="ArgumentOutOfRangeException">The limit or the offset is negative.</exception>
     private static string GenerateLimit(SelectModel model)
     {
-        if (model.Limit < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(model), model.Limit, "The limit must not be negative.");
-        }
-        if (model.Offset < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(model), model.Offset, "The offset must not be negative.");
-        }
-
         // The offset cannot be sent on its own, so it is paired with a row count. A row count of
         // zero would return no rows at all, so the largest one MySQL accepts is used instead.
         // The value does not fit in a long, so the row count is kept as text.
-        string limit = model.Limit?.ToString() ?? "18446744073709551615";
+        string limit = !string.IsNullOrEmpty(model.Limit) ? model.Limit : "18446744073709551615";
 
-        return model.Offset > 0
+        return string.IsNullOrEmpty(model.Offset)
             ? $"LIMIT {limit} OFFSET {model.Offset}"
             : $"LIMIT {limit}";
     }

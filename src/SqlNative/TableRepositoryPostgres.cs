@@ -58,7 +58,7 @@ public abstract partial class TableRepositoryPostgres<Row, Table> : TableReposit
     /// uses.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
     {
         if (model is null)
         {
@@ -71,15 +71,16 @@ public abstract partial class TableRepositoryPostgres<Row, Table> : TableReposit
         model.From = t1;
 
         return q
-        .Append($"SELECT {model.Select}")
+        .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
+        .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
         .Append($"FROM {model.From}")
         .AppendFor(model.Joins, GenerateJoin)
         .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
-        .AppendIf(model.Offset.HasValue, $"OFFSET {model.Offset}")
-        .AppendIf(model.Limit.HasValue, $"LIMIT {model.Limit}")
+        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Offset), $"OFFSET {model.Offset}")
+        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Limit), $"LIMIT {model.Limit}")
         .AddParameters(model.Parameters);
     }
 }

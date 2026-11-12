@@ -126,7 +126,8 @@ public class SqlUtils
             || type == typeof(ulong)
             || type == typeof(float)
             || type == typeof(double)
-            || type == typeof(decimal);
+            || type == typeof(decimal)
+            || type == typeof(bool);
     }
 
     private static string ToSqlLiteral(object value)

@@ -58,7 +58,7 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
     /// <c>ORDER BY</c>.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
     {
         if (model is null)
         {
@@ -71,15 +71,16 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
         model.From = t1;
 
         return q
-        .Append($"SELECT {model.Select}")
+        .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
+        .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
         .Append($"FROM {model.From}")
         .AppendFor(model.Joins, GenerateJoin)
         .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
-        .AppendIf(model.Offset.HasValue, $"OFFSET {model.Offset} ROWS")
-        .AppendIf(model.Limit.HasValue, $"FETCH NEXT {model.Limit} ROWS ONLY")
+        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Offset), $"OFFSET {model.Offset} ROWS")
+        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Limit), $"FETCH NEXT {model.Limit} ROWS ONLY")
         .AddParameters(model.Parameters);
     }
 }
