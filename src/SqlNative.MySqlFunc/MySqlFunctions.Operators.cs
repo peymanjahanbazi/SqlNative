@@ -146,10 +146,10 @@ public partial class MySqlFunctions
     /// </remarks>
     /// <example>
     /// <code>
-    /// OpEqEq(a, b)     -&gt; (a = b)
+    /// OpEq(a, b)     -&gt; (a = b)
     /// </code>
     /// </example>
-    public static string OpEqEq(string a, string b)
+    public static string OpEq(object a, object b)
     {
         return $"({a} = {b})";
     }

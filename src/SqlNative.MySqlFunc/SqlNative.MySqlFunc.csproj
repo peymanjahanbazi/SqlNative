@@ -10,8 +10,13 @@
       Aggregate/Bit/Cast/ControlFlow/DateTime/Encryption/GTID/Information/Ip/Json/Locking/Misc/Numeric/Operators/PerformanceSchema/Replication/Spatial/String/Window
       members.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RootNamespace>SqlNative</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />

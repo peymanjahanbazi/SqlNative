@@ -13,7 +13,7 @@ public partial class MySqlFunctions
     /// SELECT IF(1 &lt; 2, 'yes', 'no'); -&gt; 'yes'
     /// </code>
     /// </example>
-    public static string IF(string condition, string thenExpr, string elseExpr)
+    public static string IF(string condition, object thenExpr, object elseExpr)
     {
         return $"IF({condition}, {thenExpr}, {elseExpr})";
     }
@@ -29,7 +29,7 @@ public partial class MySqlFunctions
     /// SELECT IFNULL(NULL, 'fallback'); -&gt; 'fallback'
     /// </code>
     /// </example>
-    public static string IFNULL(string src, string alt)
+    public static string IFNULL(string src, object alt)
     {
         return $"IFNULL({src}, {alt})";
     }

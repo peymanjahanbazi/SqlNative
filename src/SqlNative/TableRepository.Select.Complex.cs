@@ -32,11 +32,11 @@ public abstract partial class TableRepository<Row, Table>
         }
         if (model.WhereList is not null && model.WhereList.Count > 0)
         {
-            model.Where = string.Join(" ", model.WhereList);
+            model.Where = string.Join("\n", model.WhereList);
         }
         if (model.SelectList is not null && model.SelectList.Count > 0)
         {
-            model.Select = string.Join(", ", model.SelectList);
+            model.Select = string.Join(",\n", model.SelectList);
         }
         if (string.IsNullOrWhiteSpace(model.Select))
         {
