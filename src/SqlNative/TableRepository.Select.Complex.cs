@@ -16,13 +16,35 @@ public abstract partial class TableRepository<Row, Table>
     /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
     /// <param name="model">The model describing the select statement.</param>
     /// <param name="q">The query being built.</param>
-    /// <param name="t1">The main table of the statement.</param>
+    /// <param name="firstTable">The main table of the statement.</param>
     /// <returns>The query containing the generated statement.</returns>
     /// <remarks>
     /// Each dialect supplies its own implementation, because the clause order and the
     /// paging syntax differ between engines.
     /// </remarks>
-    protected internal abstract Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false);
+    protected internal abstract Query GenerateQueryByModel(SelectModel model, Query q, bool IsCountQuery = false);
+
+    private Query GenerateQueryByModelMaster(SelectModel model, Query q, TableStructure firstTable, bool IsCountQuery = false)
+    {
+        if (model is null)
+        {
+            throw new ArgumentNullException(nameof(model));
+        }
+        if (model.WhereList is not null && model.WhereList.Count > 0)
+        {
+            model.Where = string.Join(" ", model.WhereList);
+        }
+        if (model.SelectList is not null && model.SelectList.Count > 0)
+        {
+            model.Select = string.Join(", ", model.SelectList);
+        }
+        if (string.IsNullOrWhiteSpace(model.Select))
+        {
+            model.Select = firstTable.Star;
+        }
+        model.From = firstTable;
+        return GenerateQueryByModel(model, q, IsCountQuery);
+    }
 
     /// <summary>
     /// Creates a SELECT query from 1 table structure with automatically assigned aliases.
@@ -34,7 +56,7 @@ public abstract partial class TableRepository<Row, Table>
         return Context.BuildQuery<Table>((q, t1) =>
         {
             var model = func(t1);
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -53,7 +75,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -73,7 +95,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -96,7 +118,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -120,7 +142,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -147,7 +169,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -175,7 +197,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -205,7 +227,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -237,7 +259,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -271,7 +293,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -307,7 +329,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -345,7 +367,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -385,7 +407,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -427,7 +449,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }
@@ -471,7 +493,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
 
-            return GenerateQueryByModel(model, q, t1);
+            return GenerateQueryByModelMaster(model, q, t1);
         }
         );
     }

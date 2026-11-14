@@ -8,11 +8,15 @@ public class SelectModel
     /// <summary>Gets or sets the expressions to select.</summary>
     public string? Select { get; set; }
 
+    public List<string>? SelectList { get; set; }
+
     /// <summary>Gets or sets the source table or expression to select from.</summary>
     internal TableStructure? From { get; set; }
 
     /// <summary>Gets or sets the WHERE predicate.</summary>
     public string? Where { get; set; }
+
+    public List<string>? WhereList { get; set; }
 
     /// <summary>Gets or sets the parameter values used by the query.</summary>
     public object? Parameters { get; set; }

@@ -58,18 +58,8 @@ public abstract partial class TableRepositoryPostgres<Row, Table> : TableReposit
     /// uses.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, bool IsCountQuery = false)
     {
-        if (model is null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-        if (string.IsNullOrWhiteSpace(model.Select))
-        {
-            model.Select = t1.Star;
-        }
-        model.From = t1;
-
         return q
         .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
         .AppendIf(IsCountQuery, $"SELECT COUNT(*)")

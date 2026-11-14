@@ -24,7 +24,7 @@ public abstract partial class TableRepository<Row, Table>
         var result = await Context.BuildQuery<Table>((q, t1) =>
         {
             var model = func(t1);
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -44,7 +44,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -66,7 +66,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -90,7 +90,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -116,7 +116,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -144,7 +144,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -174,7 +174,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -206,7 +206,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -240,7 +240,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -276,7 +276,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -314,7 +314,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -354,7 +354,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -396,7 +396,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -440,7 +440,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);
@@ -486,7 +486,7 @@ public abstract partial class TableRepository<Row, Table>
         {
             var model = func(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
 
-            return GenerateQueryByModel(model, q, t1, true);
+            return GenerateQueryByModelMaster(model, q, t1, true);
         }
         ).ExecuteScalarAsync(ct).ConfigureAwait(false);
         return Convert.ToInt64(result);

@@ -58,29 +58,19 @@ public abstract partial class TableRepositoryOracle<Row, Table> : TableRepositor
     /// <c>ORDER BY</c>.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, bool IsCountQuery = false)
     {
-        if (model is null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-        if (string.IsNullOrWhiteSpace(model.Select))
-        {
-            model.Select = t1.Star;
-        }
-        model.From = t1;
-
         return q
-        .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
-        .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
-        .Append($"FROM {model.From}")
-        .AppendFor(model.Joins, GenerateJoin)
-        .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
-        .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
-        .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
-        .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
-        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Offset), $"OFFSET {model.Offset} ROWS")
-        .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Limit), $"FETCH NEXT {model.Limit} ROWS ONLY")
-        .AddParameters(model.Parameters);
+         .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
+         .AppendIf(IsCountQuery, $"SELECT COUNT(*)")
+         .Append($"FROM {model.From}")
+         .AppendFor(model.Joins, GenerateJoin)
+         .AppendIf(!string.IsNullOrWhiteSpace(model.Where), $"WHERE {model.Where}")
+         .AppendIf(!string.IsNullOrWhiteSpace(model.GroupBy), $"GROUP BY {model.GroupBy}")
+         .AppendIf(!string.IsNullOrWhiteSpace(model.Having), $"HAVING {model.Having}")
+         .AppendIf(!string.IsNullOrWhiteSpace(model.OrderBy), $"ORDER BY {model.OrderBy}")
+         .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Offset), $"OFFSET {model.Offset} ROWS")
+         .AppendIf(!IsCountQuery && !string.IsNullOrEmpty(model.Limit), $"FETCH NEXT {model.Limit} ROWS ONLY")
+         .AddParameters(model.Parameters);
     }
 }

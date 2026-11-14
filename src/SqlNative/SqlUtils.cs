@@ -42,6 +42,11 @@ public class SqlUtils
         return parts.Count == 0 ? "" : string.Join(", ", parts);
     }
 
+    public static string As(string column, string alias)
+    {
+        return $"{column} AS {alias}";
+    }
+
     /// <summary>
     /// Builds a <c>SELECT</c> column list from its arguments, so <c>Select(a, b, c)</c> renders as
     /// <c>SELECT a, b, c</c>. Null and blank arguments are dropped.

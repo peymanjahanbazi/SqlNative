@@ -59,18 +59,8 @@ public abstract partial class TableRepositoryMySql<Row, Table> : TableRepository
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The limit or the offset is negative.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, bool IsCountQuery = false)
     {
-        if (model is null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-        if (string.IsNullOrWhiteSpace(model.Select))
-        {
-            model.Select = t1.Star;
-        }
-        model.From = t1;
-
         return q
         .AppendIf(!IsCountQuery, $"SELECT {model.Select}")
         .AppendIf(IsCountQuery, $"SELECT COUNT(*)")

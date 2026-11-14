@@ -44,7 +44,7 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
     /// <summary>Generates the SELECT statement described by a <see cref="SelectModel"/>.</summary>
     /// <param name="model">The model describing the select statement.</param>
     /// <param name="q">The query being built.</param>
-    /// <param name="t1">The main table of the statement.</param>
+    /// <param name="firstTable">The main table of the statement.</param>
     /// <param name="IsCountQuery"></param>
     /// <returns>The query containing the generated statement.</returns>
     /// <remarks>
@@ -60,18 +60,8 @@ public abstract partial class TableRepositoryMsSql<Row, Table> : TableRepository
     /// row count alone is expressed with <c>TOP (m)</c> on the <c>SELECT</c> clause.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> is <see langword="null"/>.</exception>
-    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, TableStructure t1, bool IsCountQuery = false)
+    protected internal override Query GenerateQueryByModel(SelectModel model, Query q, bool IsCountQuery = false)
     {
-        if (model is null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
-        if (string.IsNullOrWhiteSpace(model.Select))
-        {
-            model.Select = t1.Star;
-        }
-        model.From = t1;
-
         var hasOrderBy = !string.IsNullOrWhiteSpace(model.OrderBy);
         var hasLimit = !string.IsNullOrEmpty(model.Limit) && !IsCountQuery;
         var hasOffset = !string.IsNullOrEmpty(model.Offset) && !IsCountQuery;
