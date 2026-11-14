@@ -278,11 +278,11 @@ public class SqlUtils
 }
 
 /// <summary>
-/// A short alias for <see cref="SqlUtils"/>. The helpers are inherited, so <c>Sql.Join(...)</c> and
-/// <c>Sql.In(...)</c> behave exactly like their <see cref="SqlUtils"/> counterparts.
+/// A short alias for <see cref="SqlUtils"/>. The helpers are inherited, so <c>Su.Join(...)</c> and
+/// <c>Su.In(...)</c> behave exactly like their <see cref="SqlUtils"/> counterparts.
 /// </summary>
-public sealed class Sql : SqlUtils
+public sealed class Su : SqlUtils
 {
-    internal Sql() : base()
+    internal Su() : base()
     { }
 }
