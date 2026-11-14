@@ -1,0 +1,4 @@
+[*.cs]
+# Style rules
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.SA1101.severity = none

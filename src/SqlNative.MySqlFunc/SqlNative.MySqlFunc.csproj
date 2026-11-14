@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net461;netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <PackageId>SqlNative.MySqlFunc</PackageId>
+    <Authors>Peyman Jahanbazi</Authors>
+    <Description>Optional MySQL function catalog for SqlNative. Provides the partial MySqlFunctions
+      static class with
+      Aggregate/Bit/Cast/ControlFlow/DateTime/Encryption/GTID/Information/Ip/Json/Locking/Misc/Numeric/Operators/PerformanceSchema/Replication/Spatial/String/Window
+      members.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RootNamespace>SqlNative</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SqlNative\SqlNative.csproj" />
+  </ItemGroup>
+
+</Project>
