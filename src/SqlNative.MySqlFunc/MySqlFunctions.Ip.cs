@@ -1,6 +1,4 @@
-using System;
-
-namespace SqlNative;
+namespace SqlNative.MySqlFunc;
 
 public partial class MySqlFunctions
 {

@@ -1,4 +1,4 @@
-namespace SqlNative;
+namespace SqlNative.MySqlFunc;
 
 /// <summary>
 /// Provides the MySQL and MariaDB functions that can be used in a query.

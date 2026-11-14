@@ -2,16 +2,17 @@
 
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
     <PackageId>SqlNative.MySqlFunc</PackageId>
     <Authors>Peyman Jahanbazi</Authors>
-    <Description>Optional MySQL function catalog for SqlNative. Provides the partial MySqlFunctions
-      static class with
-      Aggregate/Bit/Cast/ControlFlow/DateTime/Encryption/GTID/Information/Ip/Json/Locking/Misc/Numeric/Operators/PerformanceSchema/Replication/Spatial/String/Window
-      members.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Optional MySQL and MariaDB function catalog for the SqlNative light-weight ORM. Adds the
+      MySqlFunctions class with 376 built-in functions and operators covering strings, dates, numeric, JSON, spatial,
+      aggregates, window functions and more, exposed as documented C# methods that return SQL text. Function names
+      and argument counts are compile-checked, the XML docs record argument order and MySQL/MariaDB availability, and
+      the SQL stays fully visible.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RootNamespace>SqlNative</RootNamespace>
+    <!--<RootNamespace>SqlNative</RootNamespace>-->
+    <IsPackable>true</IsPackable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,8 +23,8 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="..\SqlNative\SqlNative.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
 </Project>
