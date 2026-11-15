@@ -82,7 +82,7 @@ internal static class QueryModelGenerator
                 string expr;
                 if (occurrence[i] == 0)
                 {
-                    expr = $"reader.GetOrdinal({helper.EscapeCsStringLiteral(columnNames[i])})";
+                    expr = $"SafeGetOrdinal(reader, {helper.EscapeCsStringLiteral(columnNames[i])})";
                 }
                 else
                 {
@@ -100,7 +100,7 @@ internal static class QueryModelGenerator
         for (int i = 0; i < columnNames.Count; i++)
         {
             var readerCall = GetTypedReaderCall(propertyTypes[i], i);
-            builder.AppendLine($"        if (!r.IsDBNull(o[{i}])) {propertyNames[i]} = {readerCall};");
+            builder.AppendLine($"        if (o[{i}] != -1 && !r.IsDBNull(o[{i}])) {propertyNames[i]} = {readerCall};");
         }
         builder.AppendLine("    }");
 

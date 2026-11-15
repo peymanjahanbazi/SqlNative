@@ -14,7 +14,7 @@ internal sealed class PostgresModelWriter : IModelWriter
 
     private static readonly HashSet<string> RowReservedNames = new(StringComparer.Ordinal)
     {
-        "TableName", "Star", "GetOrders", "SetFields", "OrdinalN",
+        "TableName", "Star", "GetOrders", "SetFields", "OrdinalN", "SafeGetOrdinal",
         "ToString", "Equals", "GetHashCode", "GetType",
     };
 
@@ -179,7 +179,7 @@ internal sealed class PostgresModelWriter : IModelWriter
             occurrences[columnName] = occurrence + 1;
 
             var expression = occurrence == 0
-                ? $"reader.GetOrdinal({name})"
+                ? $"SafeGetOrdinal(reader, {name})"
                 : $"QueryResult.OrdinalN(reader, {name}, {occurrence})";
             builder.AppendLine($"        {expression}{(i < columns.Count - 1 ? "," : string.Empty)}");
         }
@@ -195,7 +195,7 @@ internal sealed class PostgresModelWriter : IModelWriter
         {
             var ordinal = "orders[" + i + "]";
             var value = ClrTypeMapper.GetReaderExpression(columns[i].ClrType, ordinal);
-            builder.AppendLine($"        if (!reader.IsDBNull({ordinal})) {columns[i].RowName} = {value};");
+            builder.AppendLine($"        if ({ordinal} != -1 && !reader.IsDBNull({ordinal})) {columns[i].RowName} = {value};");
         }
 
         builder.AppendLine("    }");

@@ -1,4 +1,3 @@
-﻿using System;
 using System.Data.Common;
 
 namespace SqlNative
@@ -27,7 +26,20 @@ namespace SqlNative
                     found++;
                 }
             }
-            throw new IndexOutOfRangeException($"Column '{name}' occurrence {occurrence} not found in reader.");
+            //throw new IndexOutOfRangeException($"Column '{name}' occurrence {occurrence} not found in reader.");
+            return -1;
+        }
+
+        protected static int SafeGetOrdinal(DbDataReader reader, string columnName)
+        {
+            try
+            {
+                return reader.GetOrdinal(columnName);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return -1;
+            }
         }
 
         /// <summary>
