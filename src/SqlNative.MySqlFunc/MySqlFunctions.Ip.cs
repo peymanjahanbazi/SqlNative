@@ -13,9 +13,9 @@ public partial class MySqlFunctions
     /// SELECT INET_ATON('192.168.0.1'); -&gt; 3232235521
     /// </code>
     /// </example>
-    public static QueryPart INET_ATON(QueryPart src)
+    public static string INET_ATON(string src)
     {
-        return new QueryPart($"INET_ATON({src})");
+        return $"INET_ATON({src})";
     }
 
     /// <summary>
@@ -29,9 +29,9 @@ public partial class MySqlFunctions
     /// SELECT INET_NTOA(3232235521); -&gt; '192.168.0.1'
     /// </code>
     /// </example>
-    public static QueryPart INET_NTOA(QueryPart src)
+    public static string INET_NTOA(string src)
     {
-        return new QueryPart($"INET_NTOA({src})");
+        return $"INET_NTOA({src})";
     }
 
     /// <summary>
@@ -45,9 +45,9 @@ public partial class MySqlFunctions
     /// SELECT HEX(INET6_ATON('::ffff:192.168.0.1')); -&gt; '00000000000000000000FFFFC0A80001'
     /// </code>
     /// </example>
-    public static QueryPart INET6_ATON(QueryPart src)
+    public static string INET6_ATON(string src)
     {
-        return new QueryPart($"INET6_ATON({src})");
+        return $"INET6_ATON({src})";
     }
 
     /// <summary>
@@ -61,9 +61,9 @@ public partial class MySqlFunctions
     /// SELECT INET6_NTOA(INET6_ATON('::ffff:192.168.0.1')); -&gt; '::ffff:192.168.0.1'
     /// </code>
     /// </example>
-    public static QueryPart INET6_NTOA(QueryPart src)
+    public static string INET6_NTOA(string src)
     {
-        return new QueryPart($"INET6_NTOA({src})");
+        return $"INET6_NTOA({src})";
     }
 
     /// <summary>
@@ -77,9 +77,9 @@ public partial class MySqlFunctions
     /// SELECT IS_IPV4('192.168.0.1'), IS_IPV4('::1'); -&gt; 1, 0
     /// </code>
     /// </example>
-    public static QueryPart IS_IPV4(QueryPart src)
+    public static string IS_IPV4(string src)
     {
-        return new QueryPart($"IS_IPV4({src})");
+        return $"IS_IPV4({src})";
     }
 
     /// <summary>
@@ -93,9 +93,9 @@ public partial class MySqlFunctions
     /// SELECT IS_IPV6('::1'), IS_IPV6('192.168.0.1'); -&gt; 1, 0
     /// </code>
     /// </example>
-    public static QueryPart IS_IPV6(QueryPart src)
+    public static string IS_IPV6(string src)
     {
-        return new QueryPart($"IS_IPV6({src})");
+        return $"IS_IPV6({src})";
     }
 
     /// <summary>
@@ -110,9 +110,9 @@ public partial class MySqlFunctions
     /// </code>
     /// </example>
     [Obsolete("IS_IPV4_COMPAT is deprecated in MySQL 8.0.13.")]
-    public static QueryPart IS_IPV4_COMPAT(QueryPart src)
+    public static string IS_IPV4_COMPAT(string src)
     {
-        return new QueryPart($"IS_IPV4_COMPAT({src})");
+        return $"IS_IPV4_COMPAT({src})";
     }
 
     /// <summary>
@@ -127,8 +127,8 @@ public partial class MySqlFunctions
     /// </code>
     /// </example>
     [Obsolete("IS_IPV4_MAPPED is deprecated in MySQL 8.0.13.")]
-    public static QueryPart IS_IPV4_MAPPED(QueryPart src)
+    public static string IS_IPV4_MAPPED(string src)
     {
-        return new QueryPart($"IS_IPV4_MAPPED({src})");
+        return $"IS_IPV4_MAPPED({src})";
     }
 }

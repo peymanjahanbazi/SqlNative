@@ -13,7 +13,7 @@ public partial class MySqlFunctions
     /// SELECT ST_X(ST_GeomFromText('POINT(1 2)')); -&gt; 1
     /// </code>
     /// </example>
-    public static string ST_X(QueryPart point)
+    public static string ST_X(string point)
     {
         return $"ST_X({point})";
     }

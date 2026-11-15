@@ -55,7 +55,7 @@ The package id is `SqlNative.MySqlFunc`, but the namespace is `SqlNative`: one `
 | `MySqlFunctions.Locking.cs` | `GET_LOCK`, `RELEASE_LOCK`, `IS_FREE_LOCK`, … |
 | `MySqlFunctions.Misc.cs` | `UUID`, `UUID_TO_BIN`, `ANY_VALUE`, `SLEEP`, … |
 | `MySqlFunctions.Numeric.cs` | `ABS`, `ROUND`, `POW`, `RAND`, … |
-| `MySqlFunctions.Operators.cs` | `OpAdd`, `OpEqEq`, `OpIn`, `OpAnd`, … |
+| `MySqlFunctions.Operators.cs` | `OpAdd`, `OpEq`, `OpIn`, `OpAnd`, … |
 | `MySqlFunctions.PerformanceSchema.cs` | `FORMAT_BYTES`, `PS_CURRENT_THREAD_ID`, … |
 | `MySqlFunctions.Replication.cs` | `MASTER_POS_WAIT`, `SOURCE_POS_WAIT` |
 | `MySqlFunctions.Spatial.cs` | `ST_GEOMFROMTEXT`, `ST_DISTANCE`, `ST_CONTAINS`, … |
@@ -189,7 +189,7 @@ Console.WriteLine(My.DATE_ADD("'2024-01-15'", "INTERVAL 30 DAY"));
 | Locking | 4 | `MySqlFunctions.Locking.cs` | `GET_LOCK`, `RELEASE_LOCK`, `IS_FREE_LOCK` |
 | Miscellaneous | 12 | `MySqlFunctions.Misc.cs` | `UUID`, `UUID_TO_BIN`, `ANY_VALUE`, `SLEEP` |
 | Numeric | 31 | `MySqlFunctions.Numeric.cs` | `ABS`, `ROUND`, `POW`, `RAND`, `CRC32` |
-| Operators | 53 | `MySqlFunctions.Operators.cs` | `OpAdd`, `OpEqEq`, `OpLike`, `OpIn`, `OpAnd` |
+| Operators | 53 | `MySqlFunctions.Operators.cs` | `OpAdd`, `OpEq`, `OpLike`, `OpIn`, `OpAnd` |
 | Performance Schema | 4 | `MySqlFunctions.PerformanceSchema.cs` | `FORMAT_BYTES`, `PS_CURRENT_THREAD_ID` |
 | Replication | 2 | `MySqlFunctions.Replication.cs` | `MASTER_POS_WAIT`, `SOURCE_POS_WAIT` |
 | Spatial | 36 | `MySqlFunctions.Spatial.cs` | `ST_GEOMFROMTEXT`, `ST_DISTANCE`, `ST_CONTAINS`, `ST_ASGEOJSON` |
@@ -361,7 +361,7 @@ Worth knowing before you build on this:
 - **The catalog is 376 members, curated rather than exhaustive.** It covers the functions used most often in application SQL. Anything else can be written inline; there is no runtime gate that rejects unknown functions.
 - **It emits text, not parameters.** Strings, paths and intervals are your responsibility. See [Literals and parameters](#literals-and-parameters).
 - **Window helpers emit a fixed `OVER ()`.** `ROW_NUMBER`, `RANK`, `LAG`, `LEAD`, `FIRST_VALUE`, `LAST_VALUE` and friends cannot accept a window specification. Write the full `OVER (...)` clause by hand when you need partitioning, ordering or a frame.
-- **Most arguments are strings.** Numbers, types, units and interval clauses are passed as text (`"2"`, `"DATE"`, `"INTERVAL 7 DAY"`), not as typed values. A few methods (`IF`, `IFNULL`, `OpEqEq`, the IP helpers) accept `object` or `QueryPart` where that is useful.
+- **Most arguments are strings.** Numbers, types, units and interval clauses are passed as text (`"2"`, `"DATE"`, `"INTERVAL 7 DAY"`), not as typed values. A few methods (`IF`, `IFNULL`, `OpEq`, the IP helpers) accept `object` or `QueryPart` where that is useful.
 - **Some members are obsolete and some are version-specific.** The XML docs record the MySQL and MariaDB versions; the catalog itself does not check the server version.
 - **No execution, mapping or CRUD.** This package only builds function expressions. Query execution, result mapping, repositories and connection handling live in `SqlNative`.
 
