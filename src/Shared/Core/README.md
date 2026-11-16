@@ -190,14 +190,16 @@ MsSqlClrTypeMapper.ApplyNullability("string", true);  // "string?"
 Returns the `DbDataReader` call that reads that type — the expression the generated `SetFields` body is built from:
 
 ```csharp
-MsSqlClrTypeMapper.GetReaderExpression("long", "orders[0]");    // "reader.GetInt64(orders[0])"
+MsSqlClrTypeMapper.GetReaderExpression("long", "orders[0]");    // "Convert.ToInt64(reader.GetValue(orders[0]))"
 MsSqlClrTypeMapper.GetReaderExpression("Guid", "orders[3]");    // "reader.GetGuid(orders[3])"
 MsSqlClrTypeMapper.GetReaderExpression("byte[]", "orders[4]");  // "(byte[])reader.GetValue(orders[4])"
 ```
 
 A nullable `?` is trimmed first, so pass the type straight from `ApplyNullability`. Anything not in the switch falls back to `({type})reader.GetValue({ordinal})`.
 
-Typed `GetInt64`/`GetBoolean`/`GetString` calls rather than `GetValue` plus a cast is the point of the whole exercise — the provider returns the exact type, so there's no boxing and no conversion.
+Value types are read through `Convert.ToX(reader.GetValue(...))` rather than the provider's typed `GetInt64`/`GetBoolean` getters. The provider's own getter throws `InvalidCastException` when the underlying column type doesn't match the getter exactly — Oracle's `NUMBER` and PostgreSQL's `numeric` are the usual culprits. `Convert.ToX` goes through `IConvertible` instead, so a `decimal` coming back for an `int` column, or a `long` coming back for an `short` column, converts cleanly instead of blowing up.
+
+`string`, `Guid` and `byte[]` keep their typed getters and casts: `Convert.ToString` would mangle a `NULL`-free but non-string value, and a `Guid` column has no useful non-typed fallback. `Guid` in particular keeps `reader.GetGuid(...)`, which is the only conversion a provider guarantees for that type.
 
 ---
 
@@ -231,7 +233,7 @@ Two consumers inside the toolkit, each compiling its own copy:
 
 **The MySQL type mapper is called `ClrTypeMapper`, not `MySqlClrTypeMapper`.** It lives in `ClrTypeMapper.cs` and is used by the MySQL writer in the generator. Every other engine's mapper is prefixed with its name. If you write `MySqlClrTypeMapper.MapToClrType(...)` it won't compile; the class you want is `SqlNative.Core.ClrTypeMapper`.
 
-**Two generators read reader expressions through the MySQL mapper.** `Postgres/ModelWriter.cs` and `Oracle/ModelWriter.cs` call `ClrTypeMapper.IsReferenceType` and `ClrTypeMapper.GetReaderExpression` rather than their own engine's equivalents. This is harmless today — `IsReferenceType` is identical in all four, and PostgreSQL's extra array cases produce the same string the shared `default` branch would anyway — but it means changing the MySQL mapper's reader table would silently change Oracle and PostgreSQL output too. Both are one-line changes to point at the right class.
+**Two generators read reader expressions through the MySQL mapper.** `Postgres/ModelWriter.cs` and `Oracle/ModelWriter.cs` call `ClrTypeMapper.IsReferenceType` and `ClrTypeMapper.GetReaderExpression` rather than their own engine's equivalents. This is harmless today — `IsReferenceType` is identical in all four, and PostgreSQL's extra array cases produce the same string the shared `default` branch would anyway — but it means changing the MySQL mapper's reader table would silently change Oracle and PostgreSQL output too. Both are one-line changes to point at the right class. The reader tables themselves are now identical across all four mappers apart from PostgreSQL's array cases, so a change to one is a change to all.
 
 **`Query.Model<T>()` cannot be told which engine you're on.** The underlying generator takes a `DatabaseEngine` and defaults it to `MySql`, but `Query.Model<T>()` on the public `Query` class exposes no way to pass one, so the runtime generator always uses MySQL's rules. The practical difference is small — the `GetObjectNameInCs` implementations are nearly identical, and MySQL's `NeedsBackticks` is a subset of SQL Server's `NeedsBrackets` — but a leading-underscore identifier would be prefixed differently.
 

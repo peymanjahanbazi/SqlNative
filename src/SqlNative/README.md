@@ -358,7 +358,7 @@ public partial class EmpRow : QueryResult
 
     public override void SetFields(DbDataReader r, int[] orders)
     {
-        if (orders[0] != -1 && !r.IsDBNull(orders[0])) Id = r.GetInt64(orders[0]);
+        if (orders[0] != -1 && !r.IsDBNull(orders[0])) Id = Convert.ToInt64(r.GetValue(orders[0]));
         if (orders[1] != -1 && !r.IsDBNull(orders[1])) Lastname = r.GetString(orders[1]);
         if (orders[2] != -1 && !r.IsDBNull(orders[2])) Manager = r.GetString(orders[2]);
     }
@@ -370,7 +370,7 @@ public partial class EmpRow : QueryResult
 `SafeGetOrdinal` is a `protected static` helper on `QueryResult`. It behaves like `reader.GetOrdinal(name)`, except a name that is missing from the result set returns `-1` instead of throwing `IndexOutOfRangeException`. Guard `SetFields` with the ordinal check *before* `IsDBNull`, because `IsDBNull(-1)` throws too:
 
 ```csharp
-if (orders[0] != -1 && !r.IsDBNull(orders[0])) Id = r.GetInt64(orders[0]);
+if (orders[0] != -1 && !r.IsDBNull(orders[0])) Id = Convert.ToInt64(r.GetValue(orders[0]));
 ```
 
 `OrdinalN` is also `protected static` and returns `-1` for a missing occurrence. It finds the *n*-th occurrence of a repeated column name — useful when a join brings back two columns with the same name.
@@ -443,7 +443,7 @@ public partial class DboEmpRow : TableRow
 
     public override void SetFields(DbDataReader reader, int[] orders)
     {
-        if (orders[0] != -1 && !reader.IsDBNull(orders[0])) Id = reader.GetInt64(orders[0]);
+        if (orders[0] != -1 && !reader.IsDBNull(orders[0])) Id = Convert.ToInt64(reader.GetValue(orders[0]));
         if (orders[1] != -1 && !reader.IsDBNull(orders[1])) Firstname = reader.GetString(orders[1]);
         if (orders[2] != -1 && !reader.IsDBNull(orders[2])) Lastname = reader.GetString(orders[2]);
     }

@@ -262,10 +262,10 @@ public partial class CountriesRow : TableRow<long>
 
     public override void SetFields(DbDataReader reader, int[] orders)
     {
-        if (orders[0] != -1 && !reader.IsDBNull(orders[0])) Id = reader.GetInt64(orders[0]);
+        if (orders[0] != -1 && !reader.IsDBNull(orders[0])) Id = Convert.ToInt64(reader.GetValue(orders[0]));
         if (orders[1] != -1 && !reader.IsDBNull(orders[1])) Name = reader.GetString(orders[1]);
         if (orders[2] != -1 && !reader.IsDBNull(orders[2])) Iso = reader.GetString(orders[2]);
-        if (orders[3] != -1 && !reader.IsDBNull(orders[3])) Createuserid = reader.GetInt64(orders[3]);
+        if (orders[3] != -1 && !reader.IsDBNull(orders[3])) Createuserid = Convert.ToInt64(reader.GetValue(orders[3]));
     }
 }
 ```
@@ -278,7 +278,7 @@ public partial class CountriesRow : TableRow<long>
 | `Key` | The primary key value. `TableRepository.Store` uses this to decide insert vs. update, and `DeleteById` uses it as the `WHERE` value. |
 | Properties | One per column, named after the table class's columns. **Nullable columns get a nullable CLR type** (`long? Createuserid`); non-null ones get the value type (`long Id`) with `= null!` on reference types. |
 | `GetOrders` | Called **once per result set**, not per row, and resolves each column name to its ordinal with `SafeGetOrdinal`, so the per-row cost is index lookups, not name comparisons. A name that is missing from the result set yields `-1` instead of throwing. |
-| `SetFields` | Called per row. Every `IsDBNull` check maps one-to-one onto the CLR type chosen above, which is why the generator emits `GetInt64` for a `bigint` and `GetDecimal` for an Oracle `NUMBER`. A column whose ordinal is `-1` is skipped, so a `SELECT` that omits a column still maps the rest of the row. |
+| `SetFields` | Called per row. Every `IsDBNull` check maps one-to-one onto the CLR type chosen above, which is why the generator emits `Convert.ToInt64` for a `bigint` and `Convert.ToDecimal` for an Oracle `NUMBER`. Value types are read through `Convert.ToX(reader.GetValue(...))` rather than the provider's typed getters, so a column whose runtime type differs from the mapped CLR type converts instead of throwing `InvalidCastException`. A column whose ordinal is `-1` is skipped, so a `SELECT` that omits a column still maps the rest of the row. |
 
 There is no `SetFields` guard for a null non-nullable property — a non-nullable column that is nevertheless `NULL` in the row leaves the property at its default rather than throwing.
 

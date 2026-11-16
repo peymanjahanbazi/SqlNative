@@ -179,7 +179,7 @@ public partial class BooksRow : TableRow
 
     public override void SetFields(DbDataReader reader, int[] orders)
     {
-        if (!reader.IsDBNull(orders[0])) Id = reader.GetInt32(orders[0]);
+        if (!reader.IsDBNull(orders[0])) Id = Convert.ToInt32(reader.GetValue(orders[0]));
         if (!reader.IsDBNull(orders[1])) Title = reader.GetString(orders[1]);
         if (!reader.IsDBNull(orders[2])) PublisherName = reader.GetString(orders[2]);
         // ...
@@ -612,7 +612,7 @@ public partial class BooksRow : TableRow
 
     public override void SetFields(DbDataReader r, int[] orders)
     {
-        if (!r.IsDBNull(orders[0])) Id = r.GetInt32(orders[0]);
+        if (!r.IsDBNull(orders[0])) Id = Convert.ToInt32(r.GetValue(orders[0]));
         if (!r.IsDBNull(orders[1])) Title = r.GetString(orders[1]);
     }
 }
